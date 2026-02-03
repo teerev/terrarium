@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from functools import cached_property
+
 from terrarium.engine.rng import SeededRNG
 from terrarium.entities.base import EntityId, EntityType, generate_id, generate_id_from_rng
+from terrarium.entities.genome import DEFAULT_GENOME, Genome
+from terrarium.entities.phenotype import Phenotype
 from terrarium.world.grid import Position
 
 
@@ -18,6 +22,7 @@ class Organism:
         *,
         id: EntityId | None = None,
         rng: SeededRNG | None = None,
+        genome: Genome | None = None,
     ) -> None:
         if id is None:
             if rng is not None:
@@ -32,6 +37,8 @@ class Organism:
         if self._energy < 0:
             raise ValueError("energy must be a non-negative integer")
         self._age: int = 0
+
+        self._genome: Genome = genome if genome is not None else DEFAULT_GENOME
 
     @property
     def id(self) -> EntityId:
@@ -67,6 +74,19 @@ class Organism:
     @property
     def is_alive(self) -> bool:
         return self._energy > 0
+
+    @property
+    def genome(self) -> Genome:
+        return self._genome
+
+    @cached_property
+    def phenotype(self) -> Phenotype:
+        """Return this organism's derived phenotype.
+
+        The phenotype is deterministic given the genome and is cached immutably.
+        """
+
+        return Phenotype.from_genome(self._genome)
 
     def tick(self) -> int:
         """Advance organism age by one tick and return new age."""
