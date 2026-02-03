@@ -1,22 +1,24 @@
-"""Entity definitions for terrarium.
+"""Entity models.
 
-The entities subpackage defines the data structures representing organisms,
-resources, and other simulated actors.
+This package exposes the public entity APIs.
 """
 
-from __future__ import annotations
-
 from .base import Entity, EntityId, EntityType, generate_id
+from .genome import DEFAULT_GENOME, Gene, GeneName, Genome
 from .organism import Organism, create_organism
 from .resource import Resource, create_resource
 
 __all__ = [
+    "DEFAULT_GENOME",
     "Entity",
     "EntityId",
     "EntityType",
-    "generate_id",
+    "Gene",
+    "GeneName",
+    "Genome",
     "Organism",
-    "create_organism",
     "Resource",
+    "create_organism",
     "create_resource",
+    "generate_id",
 ]
