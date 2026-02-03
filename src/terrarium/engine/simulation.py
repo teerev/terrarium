@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from terrarium.engine.rng import SeededRNG
+from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.world.state import WorldState
 
 
@@ -17,9 +18,16 @@ class Simulation:
     - Entity update logic is intentionally left as placeholder hooks.
     """
 
-    def __init__(self, world: WorldState, rng: SeededRNG) -> None:
+    def __init__(
+        self,
+        world: WorldState,
+        rng: SeededRNG,
+        *,
+        resource_spawner: ResourceSpawner | None = None,
+    ) -> None:
         self.world = world
         self.rng = rng
+        self.resource_spawner = resource_spawner
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -29,6 +37,10 @@ class Simulation:
         self._phase_consume()
         self._phase_reproduce()
         self._phase_cleanup()
+
+        # Spawning rules (post-cleanup, pre-tick-commit).
+        if self.resource_spawner is not None:
+            self.resource_spawner.spawn(self.world, self.rng)
 
         # Commit timestep.
         self.world.step()
