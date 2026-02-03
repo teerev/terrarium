@@ -4,6 +4,7 @@ from .emitter import EventEmitter, EventLog
 from .schema import (
     BirthEvent,
     ConsumptionEvent,
+    DeathCause,
     DeathEvent,
     Event,
     MovementEvent,
@@ -12,6 +13,7 @@ from .schema import (
 __all__ = [
     "Event",
     "BirthEvent",
+    "DeathCause",
     "DeathEvent",
     "ConsumptionEvent",
     "MovementEvent",

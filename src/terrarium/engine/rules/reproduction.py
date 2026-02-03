@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from terrarium.engine.rng import SeededRNG
 from terrarium.entities.mutation import MutationConfig, mutate_genome
 from terrarium.entities.organism import Organism
+from terrarium.events.emitter import EventEmitter
+from terrarium.events.schema import BirthEvent
 from terrarium.world.state import WorldState
 
 
@@ -26,7 +28,7 @@ class ReproductionRule:
     ----------
     reproduction_cost -> int
     offspring_energy_ratio -> float
-    apply(world, rng) -> list[Organism]
+    apply(world, rng, emitter=None) -> list[Organism]
         Returns created offspring (also added to world).
     """
 
@@ -55,7 +57,12 @@ class ReproductionRule:
         # Allow phenotype influence when no override is set.
         return max(0, int(getattr(parent.phenotype, "reproduction_cost", 0)))
 
-    def apply(self, world: WorldState, rng: SeededRNG) -> list[Organism]:
+    def apply(
+        self,
+        world: WorldState,
+        rng: SeededRNG,
+        emitter: EventEmitter | None = None,
+    ) -> list[Organism]:
         organisms: list[Organism] = []
         for ent in list(world._entities.values()):  # type: ignore[attr-defined]
             if isinstance(ent, Organism):
@@ -121,5 +128,17 @@ class ReproductionRule:
             )
             world.add_entity(child)
             offspring.append(child)
+
+            if emitter is not None:
+                emitter.emit(
+                    BirthEvent(
+                        tick=int(world.tick),
+                        parent_id=parent.id,
+                        offspring_id=child.id,
+                        genome=child.genome.to_dict(),
+                        position=child.position,
+                        offspring_energy=int(child.energy),
+                    )
+                )
 
         return offspring

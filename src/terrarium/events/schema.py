@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, Mapping, Protocol
 
 from terrarium.core import EntityId, Position
@@ -16,6 +17,12 @@ class Event(Protocol):
         """Return a JSON-serializable representation of the event."""
 
 
+class DeathCause(str, Enum):
+    """Cause of organism death."""
+
+    STARVATION = "starvation"
+
+
 @dataclass(frozen=True, slots=True)
 class BirthEvent:
     tick: int
@@ -23,6 +30,7 @@ class BirthEvent:
     offspring_id: EntityId
     genome: Mapping[str, Any]
     position: Position
+    offspring_energy: int
 
     event_type: str = "birth"
 
@@ -34,6 +42,7 @@ class BirthEvent:
             "offspring_id": str(self.offspring_id),
             "genome": dict(self.genome),
             "position": (int(self.position[0]), int(self.position[1])),
+            "offspring_energy": int(self.offspring_energy),
         }
 
 
@@ -41,7 +50,7 @@ class BirthEvent:
 class DeathEvent:
     tick: int
     organism_id: EntityId
-    cause: str
+    cause: DeathCause
     final_energy: int
 
     event_type: str = "death"
@@ -51,7 +60,7 @@ class DeathEvent:
             "event_type": self.event_type,
             "tick": int(self.tick),
             "organism_id": str(self.organism_id),
-            "cause": str(self.cause),
+            "cause": str(self.cause.value),
             "final_energy": int(self.final_energy),
         }
 
