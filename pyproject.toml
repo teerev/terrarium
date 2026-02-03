@@ -1,56 +1,33 @@
 [project]
 name = "terrarium"
 version = "0.1.0"
-description = "Terrarium is a small Python project skeleton with a command-line interface."
+description = "Terrarium simulation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "teerev" }]
-dependencies = ["click>=8.1"]
+dependencies = ["click>=8.0"]
 
-[project.urls]
-Homepage = "https://github.com/teerev/terrarium"
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
 
 [project.scripts]
 terrarium = "terrarium.cli:main"
 
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-package-dir = { "" = "src" }
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra --strict-markers --cov=terrarium --cov-report=term-missing"
+testpaths = ["tests"]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.coverage.run]
+branch = true
+source = ["terrarium"]
 
-[tool.setuptools.package-data]
-terrarium = ["py.typed"]
-
-[tool.ruff]
-target-version = "py310"
-line-length = 88
-
-[tool.ruff.lint]
-select = [
-  "E",   # pycodestyle errors
-  "F",   # pyflakes
-  "I",   # isort
-  "UP",  # pyupgrade
-  "B",   # flake8-bugbear
-]
-ignore = []
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
-  "S101", # assert usage is fine in tests (even if security rules are enabled later)
-]
-
-[tool.mypy]
-python_version = "3.10"
-strict = true
-warn_unused_configs = true
-mypy_path = ["src"]
-
-# Third-party libs used here (e.g., click) ship type information; keep this strict.
-
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 60
