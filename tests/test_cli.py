@@ -1,25 +1,19 @@
+from __future__ import annotations
+
 from click.testing import CliRunner
 
-from terrarium import __version__
 from terrarium.cli import main
 
 
-def test_cli_help_exits_zero() -> None:
+def test_cli_default_name() -> None:
     runner = CliRunner()
-    result = runner.invoke(main, ["--help"])
+    result = runner.invoke(main)
     assert result.exit_code == 0
-    assert "Usage:" in result.output
+    assert "Hello, World!" in result.output
 
 
-def test_cli_version_output() -> None:
+def test_cli_custom_name() -> None:
     runner = CliRunner()
-    result = runner.invoke(main, ["--version"])
+    result = runner.invoke(main, ["--name", "Terrarium"])
     assert result.exit_code == 0
-    assert __version__ in result.output
-
-
-def test_run_subcommand_exists() -> None:
-    runner = CliRunner()
-    result = runner.invoke(main, ["run", "--help"])
-    assert result.exit_code == 0
-    assert "Run a simulation" in result.output
+    assert "Hello, Terrarium!" in result.output
