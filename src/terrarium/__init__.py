@@ -1,8 +1,10 @@
 """Terrarium package.
 
-This repository is currently a skeleton project structure.
+This project is an emergent life simulation sandbox.
 """
+
+from __future__ import annotations
 
 __all__ = ["__version__"]
 
-__version__ = "0.1.0"
+__version__: str = "0.1.0"
