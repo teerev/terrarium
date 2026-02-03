@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from terrarium.entities.base import EntityId, EntityType, generate_id
+from terrarium.engine.rng import SeededRNG
+from terrarium.entities.base import EntityId, EntityType, generate_id, generate_id_from_rng
 from terrarium.world.grid import Position
 
 
@@ -16,8 +17,16 @@ class Organism:
         energy: int,
         *,
         id: EntityId | None = None,
+        rng: SeededRNG | None = None,
     ) -> None:
-        self._id: EntityId = generate_id() if id is None else id
+        if id is None:
+            if rng is not None:
+                self._id = generate_id_from_rng(rng)
+            else:
+                self._id = generate_id()
+        else:
+            self._id = id
+
         self._position: Position = position
         self._energy: int = int(energy)
         if self._energy < 0:

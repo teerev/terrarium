@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from terrarium.entities.base import EntityId, EntityType, generate_id
+from terrarium.engine.rng import SeededRNG
+from terrarium.entities.base import EntityId, EntityType, generate_id, generate_id_from_rng
 from terrarium.world.grid import Position
 
 
@@ -12,13 +13,15 @@ class Resource:
 
     position: Position
     energy_value: int
-    id: EntityId = field(default_factory=generate_id)
+    id: EntityId | None = None
     consumed: bool = False
 
     def __post_init__(self) -> None:
         if int(self.energy_value) <= 0:
             raise ValueError("energy_value must be a positive integer")
         self.energy_value = int(self.energy_value)
+        if self.id is None:
+            self.id = generate_id()
 
     @property
     def entity_type(self) -> EntityType:
@@ -41,9 +44,12 @@ def create_resource(
     energy_value: int,
     *,
     id: EntityId | None = None,
+    rng: SeededRNG | None = None,
 ) -> Resource:
-    """Factory for Resource with generated id if not provided."""
+    """Factory for Resource with deterministic id generation when rng is provided."""
 
     if id is None:
-        return Resource(position=position, energy_value=energy_value)
+        if rng is not None:
+            id = generate_id_from_rng(rng)
+
     return Resource(position=position, energy_value=energy_value, id=id)

@@ -17,8 +17,8 @@ class.
 
 from enum import Enum
 from typing import NewType, Protocol
-from uuid import uuid4
 
+from terrarium.engine.rng import SeededRNG
 from terrarium.world.grid import Position
 
 
@@ -38,9 +38,27 @@ class EntityType(str, Enum):
 
 
 def generate_id() -> EntityId:
-    """Generate a new unique entity identifier."""
+    """Generate a new unique entity identifier.
 
-    return EntityId(uuid4().hex)
+    Note
+    ----
+    This function is kept for backward compatibility. For deterministic
+    simulations, prefer :func:`generate_id_from_rng`.
+    """
+
+    # Default path remains non-deterministic, but tests and simulation should
+    # use generate_id_from_rng (or pass explicit ids).
+    import uuid
+
+    return EntityId(uuid.uuid4().hex)
+
+
+def generate_id_from_rng(rng: SeededRNG) -> EntityId:
+    """Generate a deterministic entity id using the provided seeded RNG."""
+
+    # Use full 128-bit space for UUID-like ids.
+    n = rng.randint(0, 2**128 - 1)
+    return EntityId(f"{n:032x}")
 
 
 class Entity(Protocol):

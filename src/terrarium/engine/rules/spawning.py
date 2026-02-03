@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from terrarium.engine.rng import SeededRNG
-from terrarium.entities.resource import Resource
+from terrarium.entities.resource import Resource, create_resource
 from terrarium.world.grid import Position
 from terrarium.world.state import WorldState
 
@@ -96,6 +96,6 @@ class ResourceSpawner:
 
         lo, hi = self.energy_range
         energy = rng.randint(int(lo), int(hi))
-        res = Resource(position=pos, energy_value=energy)
+        res = create_resource(position=pos, energy_value=energy, rng=rng)
         world.add_entity(res)
         return [res]
