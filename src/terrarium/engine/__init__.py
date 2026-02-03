@@ -6,7 +6,7 @@ world and entities. Implementations are intentionally placeholders for now.
 
 from __future__ import annotations
 
-from .rng import DefaultRandom
+from .rng import DefaultRandom, SeededRNG
 from .simulation import Simulation
 
-__all__ = ["DefaultRandom", "Simulation"]
+__all__ = ["DefaultRandom", "SeededRNG", "Simulation"]
