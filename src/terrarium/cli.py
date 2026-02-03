@@ -1,59 +1,28 @@
 from __future__ import annotations
 
-import json
+import argparse
 from pathlib import Path
 
-import click
 
-from terrarium.io.persistence import load_snapshot, save_snapshot
-from terrarium.io.snapshot import restore_snapshot
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="terrarium")
+    sub = parser.add_subparsers(dest="command")
 
+    export = sub.add_parser("export-replay", help="Export a simulation replay to JSON")
+    export.add_argument("--output", "-o", required=True, type=Path, help="Output replay JSON path")
 
-@click.group()
-def app() -> None:
-    """Terrarium command line interface."""
-
-
-@app.command("save")
-@click.option("--output", "output_path", required=True, type=click.Path(dir_okay=False, path_type=Path))
-def save_cmd(output_path: Path) -> None:
-    """Save a snapshot JSON file.
-
-    Minimal CLI: loads snapshot JSON from stdin if provided as full payload.
-    (A running simulation integration is out of scope for this repo version.)
-    """
-
-    try:
-        # Expect a snapshot payload on stdin if piped; otherwise refuse.
-        if click.get_text_stream("stdin").isatty():
-            raise click.ClickException(
-                "No snapshot provided on stdin. Pipe a snapshot JSON payload into this command."
-            )
-        data = json.load(click.get_text_stream("stdin"))
-        save_snapshot(data, output_path)
-    except click.ClickException:
-        raise
-    except Exception as e:
-        raise click.ClickException(str(e)) from e
+    return parser
 
 
-@app.command("load")
-@click.option("--input", "input_path", required=True, type=click.Path(exists=True, dir_okay=False, path_type=Path))
-def load_cmd(input_path: Path) -> None:
-    """Load a snapshot JSON file and validate it.
+def main(argv: list[str] | None = None) -> int:
+    parser = _build_parser()
+    args = parser.parse_args(argv)
 
-    For now, prints basic info as JSON to stdout.
-    """
+    if args.command == "export-replay":
+        # Minimal CLI surface: exporting requires a live simulation object.
+        # The project currently does not define a standard way to load/run a
+        # simulation from CLI arguments, so we provide a clear error.
+        parser.error("export-replay requires an in-process Simulation object; use terrarium.io.export_replay(sim, path) from Python")
 
-    try:
-        snap = load_snapshot(input_path)
-        # Validate restorable.
-        world, rng = restore_snapshot(snap)
-        info = {
-            "tick": int(world.tick),
-            "grid": {"width": int(world.grid.width), "height": int(world.grid.height)},
-            "rng_seed": int(rng.seed),
-        }
-        click.echo(json.dumps(info, indent=2, sort_keys=True))
-    except Exception as e:
-        raise click.ClickException(str(e)) from e
+    parser.print_help()
+    return 0
