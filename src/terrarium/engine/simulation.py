@@ -6,6 +6,7 @@ from terrarium.engine.rules.energy import EnergyRule
 from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.entities.organism import Organism
+from terrarium.events.emitter import EventEmitter
 from terrarium.world.state import WorldState
 
 
@@ -31,6 +32,7 @@ class Simulation:
         movement_rule: MovementRule | None = None,
         energy_rule: EnergyRule | None = None,
         death_rule: DeathRule | None = None,
+        event_emitter: EventEmitter | None = None,
     ) -> None:
         self.world = world
         self.rng = rng
@@ -38,6 +40,7 @@ class Simulation:
         self.movement_rule = movement_rule
         self.energy_rule = energy_rule
         self.death_rule = death_rule
+        self.event_emitter = event_emitter
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""

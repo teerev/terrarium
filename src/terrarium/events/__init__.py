@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .emitter import EventEmitter, EventLog
 from .schema import (
     BirthEvent,
     ConsumptionEvent,
@@ -14,4 +15,6 @@ __all__ = [
     "DeathEvent",
     "ConsumptionEvent",
     "MovementEvent",
+    "EventEmitter",
+    "EventLog",
 ]
