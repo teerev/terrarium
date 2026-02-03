@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from terrarium.engine.rng import SeededRNG
+from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
+from terrarium.entities.organism import Organism
 from terrarium.world.state import WorldState
 
 
@@ -24,10 +26,12 @@ class Simulation:
         rng: SeededRNG,
         *,
         resource_spawner: ResourceSpawner | None = None,
+        movement_rule: MovementRule | None = None,
     ) -> None:
         self.world = world
         self.rng = rng
         self.resource_spawner = resource_spawner
+        self.movement_rule = movement_rule
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -55,10 +59,19 @@ class Simulation:
         for _ in range(steps):
             self.step()
 
-    # --- Placeholder phase hooks (no behavior yet) ---
+    # --- Placeholder phase hooks ---
 
     def _phase_move(self) -> None:
-        return
+        if self.movement_rule is None:
+            return
+
+        # Minimal integration: move all Organism instances currently in the world.
+        organisms: list[Organism] = []
+        for ent in self.world._entities.values():  # type: ignore[attr-defined]
+            if isinstance(ent, Organism):
+                organisms.append(ent)
+
+        self.movement_rule.apply(organisms, self.world, self.rng)
 
     def _phase_consume(self) -> None:
         return

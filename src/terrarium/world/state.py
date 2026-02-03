@@ -73,6 +73,44 @@ class WorldState:
         if not ids:
             self._pos_index.pop(pos, None)
 
+    def move_entity(self, entity_id: EntityId, new_position: Position) -> None:
+        """Move an existing entity and keep the position index consistent.
+
+        - Wraps *new_position* using the world's grid.
+        - No-op if entity does not exist.
+        """
+
+        entity = self._entities.get(entity_id)
+        if entity is None:
+            return
+
+        old_pos = self.grid.wrap(entity.position)
+        new_pos = self.grid.wrap(new_position)
+
+        if old_pos == new_pos:
+            # Ensure entity.position is wrapped/normalized.
+            try:
+                entity.position = new_pos  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            return
+
+        # Remove from old index.
+        ids = self._pos_index.get(old_pos)
+        if ids is not None:
+            ids.discard(entity_id)
+            if not ids:
+                self._pos_index.pop(old_pos, None)
+
+        # Update entity and add to new index.
+        try:
+            entity.position = new_pos  # type: ignore[attr-defined]
+        except Exception:
+            # If an entity is not movable, still maintain index best-effort.
+            pass
+
+        self._pos_index.setdefault(new_pos, set()).add(entity_id)
+
     def get_entity(self, entity_id: EntityId) -> Optional[_Entity]:
         return self._entities.get(entity_id)
 
