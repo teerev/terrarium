@@ -7,6 +7,7 @@ organisms and resources.
 from __future__ import annotations
 
 from .base import Entity, EntityId, EntityType, generate_id
+from .mutation import MutationConfig, mutate_genome
 from .organism import Organism, create_organism
 from .phenotype import Phenotype
 from .resource import Resource
@@ -20,4 +21,6 @@ __all__ = [
     "create_organism",
     "Phenotype",
     "Resource",
+    "mutate_genome",
+    "MutationConfig",
 ]
