@@ -35,6 +35,9 @@ class WorldState:
         self._entities: Dict[EntityId, _Entity] = {}
         self._pos_index: Dict[Position, Set[EntityId]] = {}
 
+        # Optional lineage tracker; set by engine/simulation when desired.
+        self.lineage_tree = None
+
     @property
     def tick(self) -> int:
         return self._tick
@@ -56,6 +59,19 @@ class WorldState:
         pos = self.grid.wrap(entity.position)
         self._entities[eid] = entity
         self._pos_index.setdefault(pos, set()).add(eid)
+
+        # Integrate lineage tracking (auto-record organism births).
+        # Import lazily and use duck-typing to avoid new hard dependencies.
+        lt = getattr(self, "lineage_tree", None)
+        if lt is not None:
+            try:
+                from terrarium.entities.organism import Organism
+
+                if isinstance(entity, Organism):
+                    lt.add_organism(entity)
+            except Exception:
+                # Best-effort; lineage tracking should not break core simulation.
+                pass
 
     def remove_entity(self, entity_id: EntityId) -> None:
         """Remove an entity by id. No-op if not present."""
