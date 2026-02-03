@@ -104,3 +104,22 @@ class MovementEvent:
             ),
             "to_position": (int(self.to_position[0]), int(self.to_position[1])),
         }
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceSpawnEvent:
+    tick: int
+    resource_id: EntityId
+    position: Position
+    energy_value: int
+
+    event_type: str = "resource_spawn"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "event_type": self.event_type,
+            "tick": int(self.tick),
+            "resource_id": str(self.resource_id),
+            "position": (int(self.position[0]), int(self.position[1])),
+            "energy_value": int(self.energy_value),
+        }

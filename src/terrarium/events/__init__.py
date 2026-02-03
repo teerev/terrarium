@@ -8,6 +8,7 @@ from .schema import (
     DeathEvent,
     Event,
     MovementEvent,
+    ResourceSpawnEvent,
 )
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "DeathEvent",
     "ConsumptionEvent",
     "MovementEvent",
+    "ResourceSpawnEvent",
     "EventEmitter",
     "EventLog",
 ]
