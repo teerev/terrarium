@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from terrarium.core.protocols import RandomSource
+from terrarium.engine.rules.energy import EnergyRule
 from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.entities.base import EntityType
@@ -32,6 +33,7 @@ class Simulation:
     rng: RandomSource
     resource_spawner: ResourceSpawner | None = None
     movement_rule: MovementRule | None = None
+    energy_rule: EnergyRule | None = None
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick.
@@ -39,11 +41,12 @@ class Simulation:
         Phase order (skeleton):
         1) pre_step
         2) movement
-        3) consumption
-        4) reproduction
-        5) cleanup
-        6) tick increment
-        7) post_step
+        3) metabolism (energy drain)
+        4) consumption
+        5) reproduction
+        6) cleanup
+        7) tick increment
+        8) post_step
 
         Notes
         -----
@@ -53,6 +56,7 @@ class Simulation:
 
         self._phase_pre_step()
         self._phase_movement()
+        self._phase_metabolism()
         self._phase_consumption()
         self._phase_reproduction()
         self._phase_cleanup()
@@ -89,6 +93,20 @@ class Simulation:
         organisms.sort(key=lambda e: str(getattr(e, "id")))
 
         self.movement_rule.apply(organisms, self.world, self.rng)
+        return None
+
+    def _phase_metabolism(self) -> None:
+        if self.energy_rule is None:
+            return None
+
+        organisms = [
+            e
+            for e in self.world.iter_entities()
+            if getattr(e, "entity_type", None) is EntityType.ORGANISM
+        ]
+        organisms.sort(key=lambda e: str(getattr(e, "id")))
+
+        self.energy_rule.apply(organisms, self.world)
         return None
 
     def _phase_consumption(self) -> None:
