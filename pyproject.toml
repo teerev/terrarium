@@ -18,10 +18,13 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-dependencies = []
+dependencies = ["click>=8.0"]
 
 [project.urls]
 Repository = "https://github.com/teerev/terrarium"
+
+[project.scripts]
+terrarium = "terrarium.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/terrarium"]
