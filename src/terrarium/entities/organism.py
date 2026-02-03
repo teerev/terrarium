@@ -13,6 +13,12 @@ class Organism:
     """A living, mutable agent.
 
     Organisms have mutable state: position, energy, and age.
+
+    Lineage tracking fields are immutable once set:
+    - parent_id: immediate parent (or None for initial organisms)
+    - lineage_id: stable identifier for the lineage (typically the original ancestor's id)
+    - generation: 0 for initial organisms, parent.generation + 1 for offspring
+    - birth_tick: simulation tick when created (caller-provided)
     """
 
     def __init__(
@@ -23,6 +29,10 @@ class Organism:
         id: EntityId | None = None,
         rng: SeededRNG | None = None,
         genome: Genome | None = None,
+        parent_id: EntityId | None = None,
+        lineage_id: EntityId | None = None,
+        generation: int | None = None,
+        birth_tick: int = 0,
     ) -> None:
         if id is None:
             if rng is not None:
@@ -40,9 +50,38 @@ class Organism:
 
         self._genome: Genome = genome if genome is not None else DEFAULT_GENOME
 
+        # Lineage fields (immutable)
+        self._parent_id: EntityId | None = parent_id
+        self._lineage_id: EntityId = lineage_id if lineage_id is not None else self._id
+        if generation is None:
+            self._generation = 0 if parent_id is None else 1
+        else:
+            self._generation = int(generation)
+        if self._generation < 0:
+            raise ValueError("generation must be a non-negative integer")
+        self._birth_tick: int = int(birth_tick)
+        if self._birth_tick < 0:
+            raise ValueError("birth_tick must be a non-negative integer")
+
     @property
     def id(self) -> EntityId:
         return self._id
+
+    @property
+    def parent_id(self) -> EntityId | None:
+        return self._parent_id
+
+    @property
+    def lineage_id(self) -> EntityId:
+        return self._lineage_id
+
+    @property
+    def generation(self) -> int:
+        return self._generation
+
+    @property
+    def birth_tick(self) -> int:
+        return self._birth_tick
 
     @property
     def position(self) -> Position:
@@ -100,7 +139,27 @@ def create_organism(
     energy: int,
     *,
     id: EntityId | None = None,
+    parent_id: EntityId | None = None,
+    lineage_id: EntityId | None = None,
+    generation: int | None = None,
+    birth_tick: int = 0,
 ) -> Organism:
-    """Factory for Organism with generated id if not provided."""
+    """Factory for Organism with generated id if not provided.
 
-    return Organism(position=position, energy=energy, id=id)
+    Lineage fields are optional for backwards compatibility.
+
+    Notes
+    -----
+    - If lineage_id is not provided, it defaults to the organism's id (initial organism).
+    - If generation is not provided, it defaults to 0 if parent_id is None, else 1.
+    """
+
+    return Organism(
+        position=position,
+        energy=energy,
+        id=id,
+        parent_id=parent_id,
+        lineage_id=lineage_id,
+        generation=generation,
+        birth_tick=birth_tick,
+    )
