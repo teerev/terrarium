@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from terrarium.core.protocols import RandomSource
+from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.world.state import WorldState
 
 
@@ -27,6 +28,7 @@ class Simulation:
 
     world: WorldState
     rng: RandomSource
+    resource_spawner: ResourceSpawner | None = None
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick.
@@ -68,6 +70,8 @@ class Simulation:
 
     # --- Phase hooks (placeholders) ---
     def _phase_pre_step(self) -> None:
+        if self.resource_spawner is not None:
+            self.resource_spawner.spawn(self.world, self.rng)
         return None
 
     def _phase_movement(self) -> None:
