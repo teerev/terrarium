@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .base import Entity, EntityId, EntityType, generate_id
 from .organism import Organism
-from .resource import Resource
+from .resource import Resource, create_resource
 
 __all__ = [
     "Entity",
@@ -17,4 +17,5 @@ __all__ = [
     "generate_id",
     "Organism",
     "Resource",
+    "create_resource",
 ]
