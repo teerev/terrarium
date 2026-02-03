@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
+from terrarium.engine.simulator import Simulator
 from terrarium.entities.organism import Organism
 from terrarium.entities.resource import Resource
+from terrarium.io.snapshot import WorldSnapshot, create_snapshot, restore_snapshot
 from terrarium.world.state import WorldState
 
 
@@ -44,3 +47,40 @@ def snapshot_world_state(world: WorldState) -> dict[str, Any]:
         "grid": {"width": int(world.grid.width), "height": int(world.grid.height)},
         "entities": items,
     }
+
+
+@dataclass(frozen=True, slots=True)
+class ReplayResult:
+    ok: bool
+
+
+def verify_replay(snapshot: WorldSnapshot | dict[str, Any], n_steps: int) -> ReplayResult:
+    """Verify deterministic replay from a snapshot.
+
+    Runs the simulation twice from the same snapshot for *n_steps* and compares
+    the resulting snapshots.
+
+    Notes
+    -----
+    - This intentionally does not compare event logs.
+    - Comparison is done via snapshot dicts (excluding timestamp).
+    """
+
+    steps = int(n_steps)
+    if steps < 0:
+        raise ValueError("n_steps must be non-negative")
+
+    def run_once() -> dict[str, Any]:
+        world, rng = restore_snapshot(snapshot)
+        sim = Simulator(world, rng)
+        for _ in range(steps):
+            sim.step()
+        out = create_snapshot(world, rng).to_dict()
+        # Timestamp is expected to differ.
+        out.pop("timestamp", None)
+        return out
+
+    a = run_once()
+    b = run_once()
+
+    return ReplayResult(ok=(a == b))
