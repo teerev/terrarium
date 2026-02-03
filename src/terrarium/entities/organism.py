@@ -20,6 +20,8 @@ from terrarium.core.protocols import RandomSource
 from terrarium.world.grid import Position
 
 from .base import Entity, EntityId, EntityType, generate_id
+from .genome import DEFAULT_GENOME, Genome
+from .phenotype import Phenotype
 
 
 @dataclass(slots=True)
@@ -31,6 +33,7 @@ class Organism(Entity):
     id: EntityId = field(default_factory=generate_id, kw_only=True)
 
     position: Position = field(kw_only=True)
+    genome: Genome = field(default=DEFAULT_GENOME)
     energy: int = 0
     age: int = 0
 
@@ -49,6 +52,12 @@ class Organism(Entity):
         """Return True if this organism has positive energy."""
 
         return self.energy > 0
+
+    @property
+    def phenotype(self) -> Phenotype:
+        """Computed phenotype derived from this organism's genome."""
+
+        return Phenotype.from_genome(self.genome)
 
     def tick(self) -> int:
         """Advance organism internal age by one tick and return new age."""
