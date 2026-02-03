@@ -17,7 +17,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "License :: OSI Approved :: MIT License",
 ]
-dependencies = []
+dependencies = ["click>=8.0"]
 
 [project.urls]
 Homepage = "https://github.com/teerev/terrarium"
@@ -41,3 +41,6 @@ dev = [
   "ruff>=0.1.0",
   "mypy>=1.0.0",
 ]
+
+[project.scripts]
+terrarium = "terrarium.cli:main"
