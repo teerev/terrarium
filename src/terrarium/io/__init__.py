@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from .persistence import load_snapshot, save_snapshot
 from .replay import ReplayFormat, export_replay
+from .replay_reader import ReplayReader
 from .replay_schema import ReplaySchema, validate_replay
 from .snapshot import WorldSnapshot, create_snapshot, restore_snapshot
 
@@ -15,4 +16,5 @@ __all__ = [
     "export_replay",
     "ReplaySchema",
     "validate_replay",
+    "ReplayReader",
 ]
