@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "terrarium"
+version = "0.1.0"
+description = "Emergent life simulation sandbox (project skeleton)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Terrarium Contributors" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "License :: OSI Approved :: MIT License"
+]
+
+[project.urls]
+Homepage = "https://github.com/teerev/terrarium"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/terrarium"]
+
+[dependency-groups]
+dev = [
+  "pytest>=7.0",
+  "ruff>=0.1.0",
+  "mypy>=1.0"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
