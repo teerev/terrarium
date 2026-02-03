@@ -32,9 +32,28 @@ packages = ["src/terrarium"]
 [dependency-groups]
 dev = [
   "pytest>=7.0",
+  "pytest-cov>=4.0",
   "ruff>=0.1.0",
   "mypy>=1.0",
 ]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--cov=terrarium",
+  "--cov-report=term-missing",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["terrarium"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
 
 [tool.ruff]
 line-length = 88
