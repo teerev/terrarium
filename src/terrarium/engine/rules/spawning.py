@@ -86,7 +86,8 @@ class ResourceSpawner:
             if pos is None:
                 continue
             energy = self._draw_energy(rng)
-            r = create_resource(pos, energy_value=energy)
+            # Ensure deterministic IDs by sourcing from the same seeded RNG.
+            r = create_resource(pos, energy_value=energy, rng=rng)
             world.add_entity(r)
             spawned.append(r)
         return spawned

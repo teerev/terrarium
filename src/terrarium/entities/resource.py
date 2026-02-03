@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from terrarium.core.protocols import RandomSource
 from terrarium.world.grid import Position
 
 from .base import Entity, EntityId, EntityType, generate_id
@@ -58,12 +59,21 @@ class Resource(Entity):
 
 
 def create_resource(
-    position: Position, energy_value: int, *, id: EntityId | None = None
+    position: Position,
+    energy_value: int,
+    *,
+    id: EntityId | None = None,
+    rng: RandomSource | None = None,
 ) -> Resource:
-    """Factory for creating a Resource with a valid ID."""
+    """Factory for creating a Resource with a valid ID.
+
+    If *id* is provided, it is used directly.
+    Else if *rng* is provided, the ID is generated deterministically from it.
+    Else a non-deterministic ID is generated.
+    """
 
     return Resource(
         position=position,
         energy_value=energy_value,
-        id=generate_id() if id is None else id,
+        id=generate_id(rng) if id is None else id,
     )

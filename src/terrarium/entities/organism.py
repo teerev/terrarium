@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from terrarium.core.protocols import RandomSource
 from terrarium.world.grid import Position
 
 from .base import Entity, EntityId, EntityType, generate_id
@@ -57,13 +58,22 @@ class Organism(Entity):
 
 
 def create_organism(
-    position: Position, energy: int, *, id: EntityId | None = None
+    position: Position,
+    energy: int,
+    *,
+    id: EntityId | None = None,
+    rng: RandomSource | None = None,
 ) -> Organism:
-    """Factory for creating an Organism with a valid ID."""
+    """Factory for creating an Organism with a valid ID.
+
+    If *id* is provided, it is used directly.
+    Else if *rng* is provided, the ID is generated deterministically from it.
+    Else a non-deterministic ID is generated.
+    """
 
     return Organism(
         position=position,
         energy=energy,
         age=0,
-        id=generate_id() if id is None else id,
+        id=generate_id(rng) if id is None else id,
     )
