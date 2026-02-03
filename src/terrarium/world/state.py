@@ -70,6 +70,48 @@ class WorldState:
         self._entities_by_id[entity.id] = entity
         self._entity_ids_by_pos.setdefault(pos, set()).add(entity.id)
 
+    def move_entity(self, entity_id: EntityId, new_position: Position) -> Position:
+        """Move an existing entity and update spatial indices.
+
+        Parameters
+        ----------
+        entity_id:
+            ID of the entity to move.
+        new_position:
+            Target position (will be wrapped onto the grid).
+
+        Returns
+        -------
+        Position
+            The wrapped new position.
+
+        Raises
+        ------
+        KeyError
+            If the entity does not exist.
+        """
+
+        entity = self._entities_by_id[entity_id]
+        old_pos = entity.position
+        new_pos = self.grid.wrap(new_position)
+
+        if new_pos == old_pos:
+            return new_pos
+
+        # Remove from old index.
+        old_ids = self._entity_ids_by_pos.get(old_pos)
+        if old_ids is not None:
+            old_ids.discard(entity_id)
+            if not old_ids:
+                self._entity_ids_by_pos.pop(old_pos, None)
+
+        # Update entity position.
+        entity.position = new_pos
+
+        # Add to new index.
+        self._entity_ids_by_pos.setdefault(new_pos, set()).add(entity_id)
+        return new_pos
+
     def remove_entity(self, entity_id: EntityId) -> None:
         """Remove an entity by ID.
 

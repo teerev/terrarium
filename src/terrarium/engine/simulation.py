@@ -18,7 +18,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from terrarium.core.protocols import RandomSource
+from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
+from terrarium.entities.base import EntityType
 from terrarium.world.state import WorldState
 
 
@@ -29,6 +31,7 @@ class Simulation:
     world: WorldState
     rng: RandomSource
     resource_spawner: ResourceSpawner | None = None
+    movement_rule: MovementRule | None = None
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick.
@@ -75,6 +78,17 @@ class Simulation:
         return None
 
     def _phase_movement(self) -> None:
+        if self.movement_rule is None:
+            return None
+
+        organisms = [
+            e
+            for e in self.world.iter_entities()
+            if getattr(e, "entity_type", None) is EntityType.ORGANISM
+        ]
+        organisms.sort(key=lambda e: str(getattr(e, "id")))
+
+        self.movement_rule.apply(organisms, self.world, self.rng)
         return None
 
     def _phase_consumption(self) -> None:
