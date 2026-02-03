@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from terrarium.io.replay_schema import ReplaySchema
 from terrarium.io.snapshot import create_snapshot
 
 
@@ -60,7 +61,9 @@ def export_replay(sim: Any, path: str | Path) -> None:
     - format metadata (kind/version)
     - simulation metadata (seed/config/duration/tick range/grid dimensions)
     - initial snapshot (WorldSnapshot dict)
-    - full event log as an ordered list of JSON-serializable dicts
+    - events grouped by tick into frames for efficient playback
+
+    Export validates the produced payload against `ReplaySchema`.
 
     Parameters
     ----------
@@ -120,7 +123,13 @@ def export_replay(sim: Any, path: str | Path) -> None:
                     events.append(dict(e))
                 else:
                     # Unknown event type; best-effort serialize.
-                    events.append({"event_type": str(getattr(e, "event_type", "event")), "tick": int(getattr(e, "tick", 0)), "payload": str(e)})
+                    events.append(
+                        {
+                            "event_type": str(getattr(e, "event_type", "event")),
+                            "tick": int(getattr(e, "tick", 0)),
+                            "payload": str(e),
+                        }
+                    )
         except TypeError:
             # Non-iterable events container; ignore.
             events = []
@@ -128,10 +137,30 @@ def export_replay(sim: Any, path: str | Path) -> None:
     # Enforce chronological ordering.
     events.sort(key=lambda d: int(d.get("tick", 0)))
 
+    # Group events into frames by tick.
+    frames: list[dict[str, Any]] = []
+    current_tick: int | None = None
+    current_events: list[dict[str, Any]] = []
+    for e in events:
+        t = int(e.get("tick", 0))
+        if current_tick is None:
+            current_tick = t
+            current_events = [e]
+            continue
+        if t != current_tick:
+            frames.append({"tick": int(current_tick), "events": list(current_events)})
+            current_tick = t
+            current_events = [e]
+        else:
+            current_events.append(e)
+
+    if current_tick is not None:
+        frames.append({"tick": int(current_tick), "events": list(current_events)})
+
     payload: dict[str, Any] = {
         "kind": ReplayFormat().kind,
         "format_version": ReplayFormat().version,
-        "metadata": {
+        "header": {
             "seed": int(seed) if seed is not None else None,
             "config": config,
             "duration_ticks": duration_ticks,
@@ -143,8 +172,11 @@ def export_replay(sim: Any, path: str | Path) -> None:
             },
         },
         "initial_snapshot": snapshot,
-        "events": events,
+        "frames": frames,
     }
+
+    # Validate on export (raises on failure).
+    ReplaySchema.model_validate(payload)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:

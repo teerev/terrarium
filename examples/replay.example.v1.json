@@ -1,0 +1,75 @@
+{
+  "format_version": 1,
+  "frames": [
+    {
+      "events": [
+        {
+          "entity_id": "org_1",
+          "event_type": "birth",
+          "position": [
+            1,
+            2
+          ],
+          "tick": 0
+        }
+      ],
+      "tick": 0
+    },
+    {
+      "events": [
+        {
+          "entity_id": "org_1",
+          "event_type": "move",
+          "from": [
+            1,
+            2
+          ],
+          "tick": 1,
+          "to": [
+            2,
+            2
+          ]
+        }
+      ],
+      "tick": 1
+    }
+  ],
+  "header": {
+    "config": {
+      "note": "minimal example replay"
+    },
+    "duration_ticks": 2,
+    "end_tick": 2,
+    "grid": {
+      "height": 5,
+      "width": 5
+    },
+    "seed": 123,
+    "start_tick": 0
+  },
+  "initial_snapshot": {
+    "grid": {
+      "height": 5,
+      "width": 5
+    },
+    "organisms": [],
+    "resources": [],
+    "rng": {
+      "seed": 123,
+      "state": [
+        3,
+        [
+          [
+            "MT19937",
+            0
+          ]
+        ],
+        null
+      ]
+    },
+    "schema_version": 1,
+    "tick": 0,
+    "timestamp": "1970-01-01T00:00:00+00:00"
+  },
+  "kind": "terrarium.replay"
+}
