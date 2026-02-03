@@ -40,6 +40,14 @@ Reproduction threshold (int)
   trait: reproduction_threshold = 10 + g * 2
   range: [10, 110]
 
+Reproduction cost (int)
+  derived from reproduction_threshold to keep genome influence without adding new genes
+  trait: reproduction_cost = max(1, reproduction_threshold // 2)
+
+Offspring energy ratio (float)
+  fixed deterministic value (genome-independent for now)
+  trait: offspring_energy_ratio = 1.0
+
 Notes
 -----
 These are intentionally conservative defaults to keep behavior stable while
@@ -77,6 +85,8 @@ class Phenotype:
     sense_range: int
     metabolism_rate: int
     reproduction_threshold: int
+    reproduction_cost: int
+    offspring_energy_ratio: float
 
     @classmethod
     def from_genome(cls, genome: Genome) -> "Phenotype":
@@ -94,9 +104,17 @@ class Phenotype:
         g_rep = _clamp_int(genome.reproduction_threshold, 0, 50)
         reproduction_threshold = 10 + g_rep * 2
 
+        # Genome influence without introducing a new explicit gene.
+        reproduction_cost = max(1, int(reproduction_threshold) // 2)
+
+        # Deterministic, configurable via ReproductionRule override.
+        offspring_energy_ratio = 1.0
+
         return cls(
             speed=float(speed),
             sense_range=int(sense_range),
             metabolism_rate=int(metabolism_rate),
             reproduction_threshold=int(reproduction_threshold),
+            reproduction_cost=int(reproduction_cost),
+            offspring_energy_ratio=float(offspring_energy_ratio),
         )

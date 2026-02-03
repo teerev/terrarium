@@ -14,53 +14,91 @@ class ReproductionRule:
 
     Deterministic behavior:
     - Organisms are checked in sorted id order.
-    - If organism.energy > organism.phenotype.reproduction_threshold, it reproduces.
-    - Offspring spawns at the parent's current position.
-    - Offspring inherits the parent's genome, with optional mutation.
-    - Energy is split: offspring gets half of parent's current energy (floor);
-      parent keeps the remainder.
-    - Offspring lineage is set from parent:
-        parent_id = parent.id
-        lineage_id = parent.lineage_id
-        generation = parent.generation + 1
-        birth_tick = world.tick
+    - Backwards compatible default behavior when no explicit reproduction cost is configured:
+        - If organism.energy > organism.phenotype.reproduction_threshold, it reproduces.
+        - Energy is split evenly between parent and child.
+    - Configured cost behavior:
+        - Parent must have energy > threshold + cost.
+        - Parent pays explicit reproduction cost.
+        - Offspring starts with energy derived from that cost.
 
     Public API
     ----------
+    reproduction_cost -> int
+    offspring_energy_ratio -> float
     apply(world, rng) -> list[Organism]
         Returns created offspring (also added to world).
     """
 
-    # Default to no mutation to preserve existing simulation/test behavior.
-    # Simulations can enable mutation by passing a non-zero config.
     mutation: MutationConfig = MutationConfig(rate=0.0, magnitude=0.1)
 
+    # If provided, forces cost-based reproduction.
+    reproduction_cost_override: int | None = None
+
+    # Offspring starting energy formula when using a cost: floor(cost * ratio)
+    offspring_energy_ratio: float = 1.0
+
+    # Parent must retain at least this much energy after paying cost.
+    min_parent_energy_after: int = 1
+
+    @property
+    def reproduction_cost(self) -> int:
+        """Configured reproduction cost override (0 when not set)."""
+
+        if self.reproduction_cost_override is None:
+            return 0
+        return max(0, int(self.reproduction_cost_override))
+
+    def _effective_cost(self, parent: Organism) -> int:
+        if self.reproduction_cost_override is not None:
+            return max(0, int(self.reproduction_cost_override))
+        # Allow phenotype influence when no override is set.
+        return max(0, int(getattr(parent.phenotype, "reproduction_cost", 0)))
+
     def apply(self, world: WorldState, rng: SeededRNG) -> list[Organism]:
-        # Snapshot organisms first to avoid iterating a dict while mutating.
         organisms: list[Organism] = []
         for ent in list(world._entities.values()):  # type: ignore[attr-defined]
             if isinstance(ent, Organism):
                 organisms.append(ent)
 
-        # Deterministic processing order: stable sort by id.
         organisms = sorted(organisms, key=lambda o: str(o.id))
 
         offspring: list[Organism] = []
 
         for parent in organisms:
             threshold = int(parent.phenotype.reproduction_threshold)
-            if int(parent.energy) <= threshold:
-                continue
-
-            # Energy split. Offspring gets half (floor), parent keeps remainder.
             current = int(parent.energy)
-            child_energy = current // 2
-            if child_energy <= 0:
-                continue
 
-            parent.energy = current - child_energy
+            # Backwards compatible mode: when no explicit cost override is configured,
+            # reproduction gating is based only on threshold and energy is split.
+            if self.reproduction_cost_override is None:
+                if current <= threshold:
+                    continue
 
-            # Only mutate when enabled via configuration.
+                child_energy = current // 2
+                parent_final = current - child_energy
+
+                if parent_final < int(self.min_parent_energy_after):
+                    continue
+                if child_energy <= 0:
+                    continue
+
+            else:
+                cost = int(self._effective_cost(parent))
+                # Parent must have energy > threshold + cost.
+                if current <= (threshold + cost):
+                    continue
+
+                parent_final = current - cost
+                child_energy = int(cost * float(self.offspring_energy_ratio))
+
+                if parent_final < int(self.min_parent_energy_after):
+                    continue
+                if child_energy <= 0:
+                    continue
+
+            parent.energy = parent_final
+
             if float(self.mutation.rate) > 0.0 and float(self.mutation.magnitude) > 0.0:
                 child_genome = mutate_genome(
                     parent.genome,
