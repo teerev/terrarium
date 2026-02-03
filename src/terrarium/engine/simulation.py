@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 from terrarium.core.protocols import RandomSource
 from terrarium.engine.rules.consumption import ConsumptionRule
+from terrarium.engine.rules.death import DeathRule
 from terrarium.engine.rules.energy import EnergyRule
 from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
@@ -36,6 +37,7 @@ class Simulation:
     movement_rule: MovementRule | None = None
     energy_rule: EnergyRule | None = None
     consumption_rule: ConsumptionRule | None = None
+    death_rule: DeathRule | None = None
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick.
@@ -122,6 +124,8 @@ class Simulation:
         return None
 
     def _phase_cleanup(self) -> None:
+        if self.death_rule is not None:
+            self.death_rule.apply(self.world)
         return None
 
     def _phase_post_step(self) -> None:
