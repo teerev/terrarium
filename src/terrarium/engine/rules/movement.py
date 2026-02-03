@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Iterable, Protocol
 
 from terrarium.engine.rng import SeededRNG
+from terrarium.engine.sensing import sense_nearby_resources
 from terrarium.world.grid import Position
 from terrarium.world.state import WorldState
 
@@ -73,8 +74,30 @@ class MovementRule:
             if self.allow_stay:
                 candidates = [current, *candidates]
 
-            # choice() is deterministic given RNG state and candidate list order.
-            new_pos = rng.choice(candidates)
+            # Sensing: probabilistic preference toward nearest sensed resource.
+            sensed = sense_nearby_resources(org, world)
+            if sensed:
+                target_pos = world.grid.wrap(sensed[0].position)
+                current_d = int(world.grid.distance(current, target_pos))
+
+                toward: list[Position] = []
+                other: list[Position] = []
+                for pos in candidates:
+                    d = int(world.grid.distance(world.grid.wrap(pos), target_pos))
+                    if d < current_d:
+                        toward.append(pos)
+                    else:
+                        other.append(pos)
+
+                # Preference, not guarantee: pick toward 70% of the time when possible.
+                if toward and rng.random() < 0.7:
+                    new_pos = rng.choice(toward)
+                else:
+                    new_pos = rng.choice(candidates)
+            else:
+                # choice() is deterministic given RNG state and candidate list order.
+                new_pos = rng.choice(candidates)
+
             world.move_entity(org.id, new_pos)
 
             # Energy cost scales with speed; apply only when a move was attempted.
