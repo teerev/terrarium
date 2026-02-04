@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.20"]
+build-backend = "hatchling.build"
+
+[project]
+name = "terrarium"
+version = "0.1.0"
+description = "A Python terrarium simulation project."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "terrarium contributors" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "License :: OSI Approved :: MIT License",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/teerev/terrarium"
+Repository = "https://github.com/teerev/terrarium"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/terrarium"]
+
+[dependency-groups]
+dev = [
+  "pytest>=7.0",
+  "ruff>=0.1.0",
+  "mypy>=1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+target-version = "py310"
