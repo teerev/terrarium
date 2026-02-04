@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from terrarium.engine.rng import SeededRNG
+from terrarium.entities.mutation import MutationConfig, mutate_genome
 from terrarium.entities.organism import Organism, create_organism
 from terrarium.world.state import WorldState
 
@@ -15,12 +16,14 @@ class ReproductionRule:
     - Deterministic: organisms are checked in sorted ID order.
     - Threshold comes from organism.phenotype.reproduction_threshold.
     - Offspring spawned at the parent's position.
-    - Offspring inherits parent's genome (no mutation in this work order).
+    - Offspring inherits parent's genome (with mutation).
     - Parent energy reduced by offspring starting energy (energy split).
 
     Public API:
     - ReproductionRule.apply(world, rng) -> list[Organism]
     """
+
+    mutation: MutationConfig = MutationConfig()
 
     def apply(self, world: WorldState, rng: SeededRNG) -> list[Organism]:
         # WorldState doesn't expose an organism iterator; access the internal index
@@ -44,11 +47,18 @@ class ReproductionRule:
 
             parent.energy -= child_energy
 
+            child_genome = mutate_genome(
+                parent.genome,
+                rng,
+                rate=self.mutation.rate,
+                magnitude=self.mutation.magnitude,
+            )
+
             child = create_organism(
                 position=parent.position,
                 energy=child_energy,
                 rng=rng,
-                genome=parent.genome,
+                genome=child_genome,
                 parent_id=parent.id,
                 lineage_id=parent.lineage_id,
                 generation=parent.generation + 1,
