@@ -1,39 +1,68 @@
 from __future__ import annotations
 
-"""Simulation engine placeholder.
+"""Core timestep simulation loop.
 
-This module defines the top-level object responsible for advancing the world
-state over time.
+This module intentionally contains only the skeleton needed to advance the world
+state by discrete ticks in a deterministic, well-defined order.
+
+Notes
+-----
+- The RNG is provided from the outside and is not created internally.
+- Entity update logic is out of scope; placeholder phase hooks exist for future
+  behavior.
 """
 
-from dataclasses import dataclass
-
 from terrarium.core.protocols import RandomSource
-from terrarium.engine.rng import DefaultRandom
 from terrarium.world.state import WorldState
 
 
-@dataclass(slots=True)
-class SimulationEngine:
-    """Coordinates advancing a WorldState.
+class Simulation:
+    """Main simulation runner.
 
-    This placeholder stores references to world state and an RNG. The step logic
-    will be implemented in later milestones.
+    Parameters
+    ----------
+    world:
+        The world state to advance.
+    rng:
+        Random source used for any stochastic behavior. Must be provided by the
+        caller to preserve determinism and testability.
     """
 
-    world: WorldState
-    rng: RandomSource
-
-    @classmethod
-    def create(cls, world: WorldState, *, seed: int | None = None) -> "SimulationEngine":
-        """Create an engine with a default RNG."""
-
-        return cls(world=world, rng=DefaultRandom(seed=seed))
+    def __init__(self, world: WorldState, rng: RandomSource) -> None:
+        self.world = world
+        self.rng = rng
 
     def step(self) -> None:
-        """Advance the simulation by one tick.
+        """Advance the simulation by exactly one tick."""
 
-        Placeholder: intentionally does not mutate state yet.
-        """
+        # Phase order is intentionally fixed and explicit.
+        self._phase_move()
+        self._phase_consume()
+        self._phase_reproduce()
+        self._phase_cleanup()
 
+        # Commit the timestep.
+        self.world.step_tick()
+
+    def run(self, n_steps: int) -> None:
+        """Run the simulation for n_steps ticks."""
+
+        if n_steps < 0:
+            raise ValueError("n_steps must be non-negative")
+
+        for _ in range(n_steps):
+            self.step()
+
+    # --- Placeholder phase hooks (out of scope for now) ---
+
+    def _phase_move(self) -> None:
+        return None
+
+    def _phase_consume(self) -> None:
+        return None
+
+    def _phase_reproduce(self) -> None:
+        return None
+
+    def _phase_cleanup(self) -> None:
         return None
