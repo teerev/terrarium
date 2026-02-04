@@ -88,6 +88,32 @@ class WorldState:
             if not ids:
                 self._by_pos.pop(pos, None)
 
+    def move_entity(self, entity_id: EntityId, new_position: Position) -> None:
+        """Move an entity to a new position and update spatial index."""
+
+        entity = self._entities.get(entity_id)
+        if entity is None:
+            return
+
+        old_pos = self.grid.wrap(entity.position)
+        new_pos = self.grid.wrap(new_position)
+
+        if old_pos == new_pos:
+            return
+
+        # Update index: remove from old position
+        old_ids = self._by_pos.get(old_pos)
+        if old_ids is not None:
+            old_ids.discard(entity_id)
+            if not old_ids:
+                self._by_pos.pop(old_pos, None)
+
+        # Update entity position (entities are expected to have a setter)
+        setattr(entity, "position", new_pos)
+
+        # Update index: add to new position
+        self._by_pos.setdefault(new_pos, set()).add(entity_id)
+
     def get_entity(self, entity_id: EntityId) -> Optional[EntityLike]:
         """Retrieve an entity by id."""
 
