@@ -16,6 +16,7 @@ from terrarium.core.protocols import RandomSource
 from terrarium.engine.rules.death import DeathRule
 from terrarium.engine.rules.energy import EnergyRule
 from terrarium.engine.rules.movement import MovementRule
+from terrarium.engine.rules.reproduction import ReproductionRule
 from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.entities.organism import Organism
 from terrarium.world.state import WorldState
@@ -43,6 +44,7 @@ class Simulation:
         movement: MovementRule | None = None,
         energy: EnergyRule | None = None,
         death: DeathRule | None = None,
+        reproduction: ReproductionRule | None = None,
     ) -> None:
         self.world = world
         self.rng = rng
@@ -50,6 +52,7 @@ class Simulation:
         self.movement = movement or MovementRule()
         self.energy = energy or EnergyRule()
         self.death = death or DeathRule()
+        self.reproduction = reproduction or ReproductionRule()
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -97,6 +100,7 @@ class Simulation:
         return None
 
     def _phase_reproduce(self) -> None:
+        self.reproduction.apply(self.world, self.rng)
         return None
 
     def _phase_cleanup(self) -> None:
