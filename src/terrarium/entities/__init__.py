@@ -7,6 +7,7 @@ types such as organisms and resources.
 from __future__ import annotations
 
 from .base import BaseEntity, Entity, EntityId, EntityType, generate_id
+from .genome import DEFAULT_GENOME, Genome
 from .organism import Organism, create_organism
 from .resource import Resource, create_resource
 
@@ -16,6 +17,8 @@ __all__ = [
     "EntityId",
     "EntityType",
     "generate_id",
+    "Genome",
+    "DEFAULT_GENOME",
     "Organism",
     "create_organism",
     "Resource",
