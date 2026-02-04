@@ -13,7 +13,9 @@ Notes
 """
 
 from terrarium.core.protocols import RandomSource
+from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
+from terrarium.entities.organism import Organism
 from terrarium.world.state import WorldState
 
 
@@ -32,11 +34,16 @@ class Simulation:
     """
 
     def __init__(
-        self, world: WorldState, rng: RandomSource, spawner: ResourceSpawner | None = None
+        self,
+        world: WorldState,
+        rng: RandomSource,
+        spawner: ResourceSpawner | None = None,
+        movement: MovementRule | None = None,
     ) -> None:
         self.world = world
         self.rng = rng
         self.spawner = spawner
+        self.movement = movement or MovementRule()
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -65,6 +72,8 @@ class Simulation:
     # --- Placeholder phase hooks (out of scope for now) ---
 
     def _phase_move(self) -> None:
+        organisms = [e for e in self.world.iter_entities() if isinstance(e, Organism)]
+        self.movement.apply(organisms, self.world, self.rng)
         return None
 
     def _phase_consume(self) -> None:
