@@ -1,27 +1,26 @@
 """Genome data structure.
 
-This module defines an immutable, hashable container for heritable trait values.
-Mutation and phenotype mapping are intentionally out of scope.
+A Genome is an immutable, hashable container of named genes.
 
-Public APIs:
-- Gene (numeric type alias)
-- GeneName (fixed set of gene names)
-- Genome (immutable genome container)
-- DEFAULT_GENOME (default genome instance)
+Public API:
+- Gene: numeric alias for gene values
+- GeneName: fixed set of supported gene identifiers
+- Genome: immutable genome container
+- DEFAULT_GENOME: default genome instance
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Mapping, TypeAlias, overload
+from typing import Any, Mapping, TypeAlias
 
 
-Gene: TypeAlias = float | int
+Gene: TypeAlias = int | float
 
 
 class GeneName(str, Enum):
-    """Fixed set of supported genes."""
+    """Fixed set of genes supported by the simulation."""
 
     SPEED = "speed"
     SENSE_RANGE = "sense_range"
@@ -29,32 +28,35 @@ class GeneName(str, Enum):
     REPRODUCTION_THRESHOLD = "reproduction_threshold"
 
 
+_DEFAULT_VALUES: dict[GeneName, Gene] = {
+    GeneName.SPEED: 0.5,
+    GeneName.SENSE_RANGE: 2.0,
+    GeneName.METABOLISM: 0.1,
+    GeneName.REPRODUCTION_THRESHOLD: 10,
+}
+
+
 @dataclass(frozen=True, slots=True)
 class Genome:
-    """Immutable genome container.
+    """Immutable genome.
 
-    Genes are stored as named numeric values.
-
-    Notes
-    -----
-    - This is a small, fixed-schema container (explicit fields) to keep it
-      trivially hashable, fast, and easy to serialize.
+    The genes are stored as individual fields to keep the structure fixed and
+    hashable by default.
     """
 
-    speed: Gene = 0.5
-    sense_range: Gene = 3
-    metabolism: Gene = 0.5
-    reproduction_threshold: Gene = 10
+    speed: Gene = _DEFAULT_VALUES[GeneName.SPEED]
+    sense_range: Gene = _DEFAULT_VALUES[GeneName.SENSE_RANGE]
+    metabolism: Gene = _DEFAULT_VALUES[GeneName.METABOLISM]
+    reproduction_threshold: Gene = _DEFAULT_VALUES[GeneName.REPRODUCTION_THRESHOLD]
 
     def __post_init__(self) -> None:
-        # Enforce numeric gene values.
         for name in ("speed", "sense_range", "metabolism", "reproduction_threshold"):
             value = getattr(self, name)
             if not isinstance(value, (int, float)):
-                raise TypeError(f"{name} must be a numeric gene value (int|float)")
+                raise TypeError(f"Gene '{name}' must be numeric (int|float)")
 
     def to_dict(self) -> dict[str, Gene]:
-        """Serialize genome to a plain dict."""
+        """Return a JSON-serializable dict representation."""
 
         return {
             GeneName.SPEED.value: self.speed,
@@ -65,33 +67,29 @@ class Genome:
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Any]) -> "Genome":
-        """Reconstruct a Genome from a dict.
+        """Construct a Genome from a dict.
 
-        Extra keys are ignored. Missing keys fall back to defaults.
+        Unknown keys are ignored to allow forward compatibility.
+        Missing keys fall back to defaults.
         """
 
-        def _get(key: GeneName, default: Gene) -> Gene:
-            if key.value not in d:
-                return default
-            value = d[key.value]
-            if not isinstance(value, (int, float)):
-                raise TypeError(f"{key.value} must be a numeric gene value (int|float)")
-            return value
+        def _get(name: GeneName) -> Gene:
+            if name.value not in d:
+                return _DEFAULT_VALUES[name]
+            v = d[name.value]
+            if not isinstance(v, (int, float)):
+                raise TypeError(f"Gene '{name.value}' must be numeric (int|float)")
+            return v
 
         return cls(
-            speed=_get(GeneName.SPEED, cls().speed),
-            sense_range=_get(GeneName.SENSE_RANGE, cls().sense_range),
-            metabolism=_get(GeneName.METABOLISM, cls().metabolism),
-            reproduction_threshold=_get(
-                GeneName.REPRODUCTION_THRESHOLD, cls().reproduction_threshold
-            ),
+            speed=_get(GeneName.SPEED),
+            sense_range=_get(GeneName.SENSE_RANGE),
+            metabolism=_get(GeneName.METABOLISM),
+            reproduction_threshold=_get(GeneName.REPRODUCTION_THRESHOLD),
         )
 
     def distance(self, other: "Genome") -> float:
-        """Simple distance metric between two genomes.
-
-        Uses sum of absolute differences across genes.
-        """
+        """Simple similarity metric: L1 distance over the known genes."""
 
         return float(
             abs(float(self.speed) - float(other.speed))
