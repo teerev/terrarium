@@ -9,9 +9,11 @@ from __future__ import annotations
 from .energy import EnergyRule
 from .movement import MovementRule
 from .spawning import ResourceSpawner
+from .consumption import ConsumptionRule
 
 __all__ = [
     "ResourceSpawner",
     "MovementRule",
     "EnergyRule",
+    "ConsumptionRule",
 ]
