@@ -1,22 +1,82 @@
-"""Base entity types.
+"""Base entity protocol and shared entity utilities.
 
-This module provides minimal concrete implementations that can satisfy core
-protocols while the simulation logic is developed.
+This module defines the minimal *structural* interface (via ``typing.Protocol``)
+that all simulation entities must implement.
+
+Public APIs:
+- :class:`Entity` protocol
+- :data:`EntityId` type alias
+- :class:`EntityType` enum
+- :func:`generate_id` unique ID generator
+
+Design notes:
+- Entity IDs are intended to be unique and immutable once assigned.
+- ``position`` must be gettable and settable to allow movement.
+- ``entity_type`` allows filtering/grouping entities by category.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from enum import Enum
+from typing import NewType, Protocol
+import uuid
 
-from terrarium.core.types import EntityId, Position
+from terrarium.world.grid import Position
 
 
-@dataclass(frozen=True, slots=True)
-class BaseEntity:
-    """Minimal concrete entity.
+EntityId = NewType("EntityId", uuid.UUID)
+"""Identifier for an entity.
 
-    Acts as a simple, typed placeholder that can be stored in a world.
+Implemented as a :class:`uuid.UUID` wrapped in :func:`typing.NewType` to keep
+runtime cost low while providing stronger type-checking.
+
+IDs should be treated as immutable.
+"""
+
+
+class EntityType(str, Enum):
+    """High-level categories for entities."""
+
+    ORGANISM = "organism"
+    RESOURCE = "resource"
+
+
+def generate_id() -> EntityId:
+    """Generate a fresh unique entity id."""
+
+    return EntityId(uuid.uuid4())
+
+
+class Entity(Protocol):
+    """Protocol all entities must implement.
+
+    This is a structural interface: any object with these attributes is
+    considered an ``Entity`` for typing purposes.
     """
 
-    id: EntityId
-    position: Position
+    @property
+    def id(self) -> EntityId:
+        """Unique, immutable identifier for this entity."""
+
+    @property
+    def position(self) -> Position:
+        """Current position in the world."""
+
+    @position.setter
+    def position(self, value: Position) -> None:
+        """Update the entity's position."""
+
+    @property
+    def entity_type(self) -> EntityType:
+        """Category of this entity for filtering/grouping."""
+
+
+class BaseEntity:
+    """Compatibility placeholder.
+
+    The repository previously exported ``BaseEntity`` from ``terrarium.entities``.
+    Concrete implementations are out of scope for this work order; this class
+    exists only to avoid breaking imports.
+    """
+
+    pass
