@@ -8,9 +8,11 @@ from __future__ import annotations
 
 from .rng import DefaultRNG, SeededRNG
 from .simulation import Simulation
+from . import rules
 
 __all__ = [
     "DefaultRNG",
     "SeededRNG",
     "Simulation",
+    "rules",
 ]
