@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from terrarium.engine.rng import SeededRNG
 from terrarium.entities.mutation import MutationConfig, mutate_genome
 from terrarium.entities.organism import Organism, create_organism
+from terrarium.events.emitter import EventEmitter
+from terrarium.events.schema import BirthEvent
 from terrarium.world.state import WorldState
 
 
@@ -24,7 +26,7 @@ class ReproductionRule:
     - Parent retains a minimum viable energy after reproduction.
 
     Public API:
-    - ReproductionRule.apply(world, rng) -> list[Organism]
+    - ReproductionRule.apply(world, rng, emitter=None) -> list[Organism]
     - ReproductionRule.reproduction_cost -> int
     - ReproductionRule.offspring_energy_ratio -> float
     """
@@ -34,7 +36,7 @@ class ReproductionRule:
     offspring_energy_ratio: float = 1.0
     min_parent_energy_after: int = 1
 
-    def apply(self, world: WorldState, rng: SeededRNG) -> list[Organism]:
+    def apply(self, world: WorldState, rng: SeededRNG, emitter: EventEmitter | None = None) -> list[Organism]:
         # WorldState doesn't expose an organism iterator; access the internal index
         # (consistent with other rules) and keep deterministic order.
         entities = getattr(world, "_entities", {})
@@ -94,5 +96,18 @@ class ReproductionRule:
 
             world.add_entity(child)
             offspring.append(child)
+
+            # Emit birth event after offspring is created/added.
+            if emitter is not None:
+                emitter.emit(
+                    BirthEvent(
+                        tick=world.tick,
+                        parent_id=parent.id,  # type: ignore[arg-type]
+                        offspring_id=child.id,  # type: ignore[arg-type]
+                        genome=child.genome.to_dict(),
+                        position=child.position,
+                        offspring_energy=int(child.energy),
+                    )
+                )
 
         return offspring

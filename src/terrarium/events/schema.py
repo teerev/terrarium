@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from enum import Enum
 from typing import Any, Dict, Mapping, Protocol
 
 from terrarium.core.types import EntityId, Position
@@ -42,6 +43,12 @@ def _to_jsonable(obj: Any) -> Any:
     return obj
 
 
+class DeathCause(str, Enum):
+    """Known causes of organism death."""
+
+    STARVATION = "starvation"
+
+
 @dataclass(frozen=True, slots=True)
 class BirthEvent:
     tick: int
@@ -49,6 +56,7 @@ class BirthEvent:
     offspring_id: EntityId
     genome: Mapping[str, Any]
     position: Position
+    offspring_energy: int
 
     event_type: str = "birth"
 
@@ -58,6 +66,7 @@ class BirthEvent:
         d["offspring_id"] = int(self.offspring_id)
         d["position"] = list(self.position)
         d["genome"] = dict(self.genome)
+        d["offspring_energy"] = int(self.offspring_energy)
         return _to_jsonable(d)
 
 
