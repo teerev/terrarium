@@ -9,11 +9,19 @@ Scope notes:
 Public APIs:
 - :class:`Organism`
 - :func:`create_organism`
+
+Lineage tracking (P2.03):
+- parent_id: immediate parent id (None for initial organisms)
+- lineage_id: stable id identifying the original ancestor line
+- generation: 0 for initial organisms; parent+1 for offspring
+- birth_tick: simulation tick when created
+
+Lineage fields are immutable after creation.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from terrarium.engine.rng import SeededRNG
 from terrarium.entities.base import EntityId, EntityType, generate_id, generate_id_from_rng
@@ -31,6 +39,11 @@ class Organism:
         energy: Current energy (non-negative integer).
         age: Ticks since creation (starts at 0).
         id: Unique immutable entity id.
+
+        parent_id: Immediate parent id (None for initial organisms).
+        lineage_id: Stable id for the lineage (typically original ancestor id).
+        generation: Generation number (0 for initial organisms).
+        birth_tick: Simulation tick when organism was created.
     """
 
     position: Position
@@ -38,6 +51,15 @@ class Organism:
     genome: Genome = DEFAULT_GENOME
     age: int = 0
     id: EntityId | None = None
+
+    # Lineage tracking
+    parent_id: EntityId | None = None
+    lineage_id: EntityId | None = None
+    generation: int = 0
+    birth_tick: int = 0
+
+    # Internal flag used to enforce immutability only after initialization.
+    _lineage_frozen: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.id is None:
@@ -48,6 +70,30 @@ class Organism:
 
         if not isinstance(self.age, int) or self.age < 0:
             raise ValueError("age must be a non-negative integer")
+
+        if not isinstance(self.generation, int) or self.generation < 0:
+            raise ValueError("generation must be a non-negative integer")
+
+        if not isinstance(self.birth_tick, int) or self.birth_tick < 0:
+            raise ValueError("birth_tick must be a non-negative integer")
+
+        # Default lineage behavior:
+        # - Initial organisms: parent_id=None, generation=0, lineage_id defaults to self.id
+        # - Offspring: lineage_id must be provided (typically parent's lineage_id)
+        if self.lineage_id is None:
+            self.lineage_id = self.id
+
+        # Freeze lineage fields after initialization completes.
+        object.__setattr__(self, "_lineage_frozen", True)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        # Enforce immutability for lineage fields after creation.
+        if (
+            name in {"parent_id", "lineage_id", "generation", "birth_tick"}
+            and getattr(self, "_lineage_frozen", False)
+        ):
+            raise AttributeError(f"'{name}' is immutable after creation")
+        object.__setattr__(self, name, value)
 
     @property
     def entity_type(self) -> EntityType:
@@ -81,6 +127,11 @@ def create_organism(
     entity_id: EntityId | None = None,
     rng: SeededRNG | None = None,
     genome: Genome | None = None,
+    # Lineage tracking inputs
+    parent_id: EntityId | None = None,
+    lineage_id: EntityId | None = None,
+    generation: int | None = None,
+    birth_tick: int = 0,
 ) -> Organism:
     """Factory for creating Organism instances with a valid id.
 
@@ -88,6 +139,12 @@ def create_organism(
     - If entity_id is provided, it is used as-is.
     - Else if rng is provided, a deterministic id is generated from it.
     - Else a non-deterministic uuid4 id is generated.
+
+    Lineage:
+    - If parent_id is None, defaults are parent_id=None, generation=0.
+      lineage_id defaults to the organism's own id.
+    - If parent_id is provided, generation defaults to 1 and lineage_id must be
+      provided by the caller (typically parent's lineage_id).
     """
 
     if entity_id is None and rng is not None:
@@ -96,4 +153,16 @@ def create_organism(
     if genome is None:
         genome = DEFAULT_GENOME
 
-    return Organism(position=position, energy=energy, genome=genome, id=entity_id)
+    if generation is None:
+        generation = 0 if parent_id is None else 1
+
+    return Organism(
+        position=position,
+        energy=energy,
+        genome=genome,
+        id=entity_id,
+        parent_id=parent_id,
+        lineage_id=lineage_id,
+        generation=generation,
+        birth_tick=birth_tick,
+    )
