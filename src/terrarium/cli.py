@@ -16,6 +16,7 @@ from typing import List, Optional
 
 from terrarium.io.replay_reader import ReplayReader
 from terrarium.render.ascii import render_world_ascii
+from terrarium.render.terminal import TerminalViewer
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,20 @@ class _ArgparseApp:
             help="Tick to render (defaults to replay start tick)",
         )
 
+        watch = sub.add_parser("watch", help="Watch a replay in the terminal")
+        watch.add_argument(
+            "--replay",
+            type=str,
+            default=None,
+            help="Path to a replay JSON file to watch",
+        )
+        watch.add_argument(
+            "--fps",
+            type=float,
+            default=10.0,
+            help="Playback speed in frames per second",
+        )
+
         return parser
 
     def main(
@@ -67,10 +82,29 @@ class _ArgparseApp:
         if prog_name is not None:
             parser.prog = prog_name
 
-        ns = parser.parse_args(args=args)
+        # argparse prints help to stdout and then raises SystemExit(0).
+        # Capture that behavior but ensure help text is on stdout for tests.
+        try:
+            ns = parser.parse_args(args=args)
+        except SystemExit as e:
+            code = getattr(e, "code", 0)
+            try:
+                icode = int(code)
+            except Exception:
+                icode = 0
+
+            if icode == 0 and args is not None and any(a in ("-h", "--help") for a in args):
+                # argparse defaults to stderr for error output, but help text is
+                # expected on stdout and tests assert on captured stdout.
+                parser.print_help()
+
+            return icode
 
         if ns.command == "render":
             return _cmd_render(replay_path=ns.replay, ascii_=bool(ns.ascii), tick=ns.tick)
+
+        if ns.command == "watch":
+            return _cmd_watch(replay_path=ns.replay, fps=float(ns.fps))
 
         # Should be unreachable due to required=True
         return 2
@@ -88,6 +122,15 @@ def _cmd_render(*, replay_path: str | None, ascii_: bool, tick: int | None) -> i
     t = start_tick if tick is None else int(tick)
     frame = reader.get_frame(t)
     print(render_world_ascii(frame))
+    return 0
+
+
+def _cmd_watch(*, replay_path: str | None, fps: float) -> int:
+    if replay_path is None:
+        raise SystemExit("--replay PATH is required for watch")
+
+    reader = ReplayReader(Path(replay_path))
+    TerminalViewer().play_replay(reader, fps=float(fps))
     return 0
 
 
