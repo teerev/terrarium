@@ -1,21 +1,107 @@
-"""World state container.
+"""Central world state container.
 
-This is a placeholder for a future, richer world implementation.
+The world state is the single source of truth for:
+- The grid topology
+- Entity storage and lookup (by id and by position)
+- The current simulation tick
+
+This module intentionally does not implement simulation logic.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Protocol, Set
 
-from terrarium.world.grid import Grid
+from terrarium.core.types import EntityId
+from terrarium.world.grid import Grid, Position
 
 
-@dataclass(slots=True)
+class EntityLike(Protocol):
+    """Minimal protocol for entities stored in the world."""
+
+    @property
+    def id(self) -> EntityId: ...
+
+    @property
+    def position(self) -> Position: ...
+
+
+@dataclass(frozen=True)
 class WorldState:
-    """Holds the current world state.
+    """Central container for all world state.
 
-    For now this is only a grid reference; later it may include entities,
-    resources, and other mutable state.
+    Args:
+        grid: The grid used for wrapping and adjacency.
+        seed: Seed value associated with this world's deterministic setup.
     """
 
     grid: Grid
+    seed: int
+
+    def __post_init__(self) -> None:
+        # Internal mutable indexes. The dataclass is frozen, so we use
+        # object.__setattr__ for initialization.
+        object.__setattr__(self, "_tick", 0)
+        object.__setattr__(self, "_entities", {})
+        object.__setattr__(self, "_by_pos", {})
+
+    @property
+    def tick(self) -> int:
+        """Current simulation timestep."""
+
+        return self._tick
+
+    def step(self) -> int:
+        """Advance the simulation tick by one.
+
+        Returns:
+            The new tick value.
+        """
+
+        self._tick += 1
+        return self._tick
+
+    def add_entity(self, entity: EntityLike) -> None:
+        """Register an entity in the world."""
+
+        entity_id = entity.id
+        if entity_id in self._entities:
+            raise ValueError(f"Entity id already exists: {entity_id}")
+
+        pos = self.grid.wrap(entity.position)
+
+        self._entities[entity_id] = entity
+        self._by_pos.setdefault(pos, set()).add(entity_id)
+
+    def remove_entity(self, entity_id: EntityId) -> None:
+        """Remove an entity from the world by id."""
+
+        entity = self._entities.pop(entity_id, None)
+        if entity is None:
+            return
+
+        pos = self.grid.wrap(entity.position)
+        ids = self._by_pos.get(pos)
+        if ids is not None:
+            ids.discard(entity_id)
+            if not ids:
+                self._by_pos.pop(pos, None)
+
+    def get_entity(self, entity_id: EntityId) -> Optional[EntityLike]:
+        """Retrieve an entity by id."""
+
+        return self._entities.get(entity_id)
+
+    def get_entities_at(self, position: Position) -> List[EntityLike]:
+        """Return a list of entities currently indexed at a position."""
+
+        pos = self.grid.wrap(position)
+        ids = self._by_pos.get(pos, set())
+        return [self._entities[eid] for eid in ids if eid in self._entities]
+
+
+# Internal attribute type hints (for static checkers)
+WorldState._tick: int
+WorldState._entities: Dict[EntityId, EntityLike]
+WorldState._by_pos: Dict[Position, Set[EntityId]]
