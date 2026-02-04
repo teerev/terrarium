@@ -32,12 +32,39 @@ dev = [
   "pytest>=7.0",
   "ruff>=0.1.0",
   "mypy>=1.0",
+  "types-click",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 100
-
+line-length = 88
 target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["terrarium"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unused_configs = true
+show_error_codes = true
+pretty = true
+
+# Keep mypy focused on the library code.
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["click"]
+ignore_missing_imports = true
