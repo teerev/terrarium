@@ -64,7 +64,8 @@ class ResourceSpawner:
         lo, hi = self.energy_range
         energy = rng.randint(lo, hi)
 
-        resource = create_resource(pos, energy)
+        # Deterministic ID generation via rng.
+        resource = create_resource(pos, energy, rng=rng)
         world.add_entity(resource)
         return [resource]
 

@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from terrarium.entities.base import EntityId, EntityType, generate_id
+from terrarium.engine.rng import SeededRNG
+from terrarium.entities.base import EntityId, EntityType, generate_id, generate_id_from_rng
 from terrarium.world.grid import Position
 
 
@@ -42,7 +43,22 @@ class Resource:
         return self.energy_value
 
 
-def create_resource(position: Position, energy_value: int, *, entity_id: EntityId | None = None) -> Resource:
-    """Factory for creating Resource instances with a valid id."""
+def create_resource(
+    position: Position,
+    energy_value: int,
+    *,
+    entity_id: EntityId | None = None,
+    rng: SeededRNG | None = None,
+) -> Resource:
+    """Factory for creating Resource instances with a valid id.
+
+    Determinism:
+    - If entity_id is provided, it is used as-is.
+    - Else if rng is provided, a deterministic id is generated from it.
+    - Else a non-deterministic uuid4 id is generated.
+    """
+
+    if entity_id is None and rng is not None:
+        entity_id = generate_id_from_rng(rng)
 
     return Resource(position=position, energy_value=energy_value, id=entity_id)

@@ -13,6 +13,10 @@ Design notes:
 - Entity IDs are intended to be unique and immutable once assigned.
 - ``position`` must be gettable and settable to allow movement.
 - ``entity_type`` allows filtering/grouping entities by category.
+
+Determinism constraint:
+- IDs must be generated deterministically when running seeded simulations.
+  Callers may supply an explicit id or use :func:`generate_id_from_rng`.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ from enum import Enum
 from typing import NewType, Protocol
 import uuid
 
+from terrarium.engine.rng import SeededRNG
 from terrarium.world.grid import Position
 
 
@@ -42,9 +47,23 @@ class EntityType(str, Enum):
 
 
 def generate_id() -> EntityId:
-    """Generate a fresh unique entity id."""
+    """Generate a fresh unique entity id.
+
+    Note
+    ----
+    This uses :func:`uuid.uuid4` and is therefore *not deterministic*. Seeded
+    simulations should instead use :func:`generate_id_from_rng`.
+    """
 
     return EntityId(uuid.uuid4())
+
+
+def generate_id_from_rng(rng: SeededRNG) -> EntityId:
+    """Generate a deterministic UUID derived from the provided seeded RNG."""
+
+    # Use a deterministic 128-bit int from the RNG.
+    value = rng.randint(0, 2**128 - 1)
+    return EntityId(uuid.UUID(int=value))
 
 
 class Entity(Protocol):

@@ -59,8 +59,10 @@ class WorldState:
             The new tick value.
         """
 
-        self._tick += 1
-        return self._tick
+        # WorldState is a frozen dataclass; mutate internal counter via object.__setattr__.
+        new_tick = self._tick + 1
+        object.__setattr__(self, "_tick", new_tick)
+        return new_tick
 
     def add_entity(self, entity: EntityLike) -> None:
         """Register an entity in the world."""
