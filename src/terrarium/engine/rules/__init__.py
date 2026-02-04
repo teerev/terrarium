@@ -10,10 +10,12 @@ from .energy import EnergyRule
 from .movement import MovementRule
 from .spawning import ResourceSpawner
 from .consumption import ConsumptionRule
+from .death import DeathRule
 
 __all__ = [
     "ResourceSpawner",
     "MovementRule",
     "EnergyRule",
     "ConsumptionRule",
+    "DeathRule",
 ]

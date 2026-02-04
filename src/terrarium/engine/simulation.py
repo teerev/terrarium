@@ -11,6 +11,7 @@ scope for this skeleton.
 from __future__ import annotations
 
 from terrarium.engine.rng import SeededRNG
+from terrarium.engine.rules.death import DeathRule
 from terrarium.engine.rules.energy import EnergyRule
 from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
@@ -37,6 +38,8 @@ class Simulation:
         Optional rule component that moves Organism entities.
     energy_rule:
         Optional rule component that drains organism energy each tick.
+    death_rule:
+        Optional rule component that removes dead Organism entities each tick.
     """
 
     def __init__(
@@ -46,12 +49,14 @@ class Simulation:
         resource_spawner: ResourceSpawner | None = None,
         movement_rule: MovementRule | None = None,
         energy_rule: EnergyRule | None = None,
+        death_rule: DeathRule | None = None,
     ):
         self.world = world
         self.rng = rng
         self.resource_spawner = resource_spawner
         self.movement_rule = movement_rule
         self.energy_rule = energy_rule
+        self.death_rule = death_rule
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -60,6 +65,7 @@ class Simulation:
         self._phase_spawn()
         self._phase_move()
         self._phase_energy()
+        self._phase_death()
         self._phase_consume()
         self._phase_reproduce()
         self._phase_cleanup()
@@ -104,6 +110,11 @@ class Simulation:
         organisms.sort(key=lambda o: str(o.id))
 
         self.energy_rule.apply(organisms, self.world)
+
+    def _phase_death(self) -> None:
+        if self.death_rule is None:
+            return
+        self.death_rule.apply(self.world)
 
     def _phase_consume(self) -> None:
         return
