@@ -30,6 +30,10 @@ Mapping formulas (linear scaling with clamping):
     repro_gene = genome.reproduction_threshold
     reproduction_threshold = int(round(clamp(5.0, 200.0, base=10.0 + repro_gene * 10.0)))
 
+- reproduction_cost:
+    repro_gene = genome.reproduction_threshold
+    reproduction_cost = int(round(clamp(1.0, 100.0, base=2.0 + repro_gene * 2.0)))
+
 Notes:
 - The clamping ranges are chosen to keep values usable for simple rules.
 - The default Genome values produce reasonable defaults.
@@ -58,6 +62,7 @@ class Phenotype:
     sense_range: int
     metabolism_rate: int
     reproduction_threshold: int
+    reproduction_cost: int
 
     @classmethod
     def from_genome(cls, genome: Genome) -> "Phenotype":
@@ -77,9 +82,15 @@ class Phenotype:
             round(_clamp(10.0 + float(genome.reproduction_threshold) * 10.0, 5.0, 200.0))
         )
 
+        # reproduction_cost: energy spent to reproduce (integer)
+        reproduction_cost = int(
+            round(_clamp(2.0 + float(genome.reproduction_threshold) * 2.0, 1.0, 100.0))
+        )
+
         return cls(
             speed=float(speed),
             sense_range=int(sense_range),
             metabolism_rate=int(metabolism_rate),
             reproduction_threshold=int(reproduction_threshold),
+            reproduction_cost=int(reproduction_cost),
         )

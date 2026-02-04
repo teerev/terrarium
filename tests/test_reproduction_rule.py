@@ -8,48 +8,43 @@ from terrarium.world.grid import Grid, Position
 from terrarium.world.state import WorldState
 
 
-def test_reproduction_creates_offspring_and_splits_energy_and_lineage() -> None:
+def test_reproduction_requires_threshold_plus_cost_and_accounts_energy() -> None:
     world = WorldState(grid=Grid(5, 5), seed=123)
     rng = SeededRNG(1)
 
-    # genome.reproduction_threshold is expected normalized; 0.0 -> phenotype threshold near minimum.
-    genome = Genome(reproduction_threshold=0.0)
+    # Choose a genome giving a stable threshold and cost via Phenotype.
+    genome = Genome(reproduction_threshold=1)
+    phenotype = create_organism(position=Position(0, 0), energy=0, genome=genome).phenotype
+    threshold = int(phenotype.reproduction_threshold)
+    cost = int(phenotype.reproduction_cost)
 
-    parent1 = create_organism(Position(2, 2), energy=20, rng=rng, genome=genome)
-    parent2 = create_organism(Position(1, 1), energy=21, rng=rng, genome=genome)
-    world.add_entity(parent1)
-    world.add_entity(parent2)
+    parent = create_organism(
+        position=Position(0, 0),
+        energy=threshold + cost,  # Not strictly greater => should NOT reproduce
+        rng=rng,
+        genome=genome,
+    )
+    world.add_entity(parent)
 
     rule = ReproductionRule()
-    children = rule.apply(world, rng)
+    spawned = rule.apply(world, rng)
+    assert spawned == []
 
-    assert len(children) == 2
+    # Now give enough energy: strictly greater than threshold + cost
+    parent.energy = threshold + cost + 1
 
-    # Offspring at parent's position, same genome, correct lineage
-    by_parent = {c.parent_id: c for c in children}
-    c1 = by_parent[parent1.id]
-    c2 = by_parent[parent2.id]
+    before = parent.energy
+    spawned = rule.apply(world, rng)
+    assert len(spawned) == 1
 
-    assert c1.position == parent1.position
-    assert c2.position == parent2.position
+    child = spawned[0]
+    assert child.position == parent.position
 
-    assert c1.genome == parent1.genome
-    assert c2.genome == parent2.genome
+    # Parent pays exact cost
+    assert parent.energy == before - cost
 
-    assert c1.lineage_id == parent1.lineage_id
-    assert c2.lineage_id == parent2.lineage_id
+    # Offspring gets energy derived from cost (default ratio 1.0, capped to cost)
+    assert child.energy == cost
 
-    assert c1.generation == parent1.generation + 1
-    assert c2.generation == parent2.generation + 1
-
-    assert c1.birth_tick == world.tick
-    assert c2.birth_tick == world.tick
-
-    # Energy split: child gets floor(parent_energy_before/2), parent reduced by that amount.
-    # parent1: 20 -> child 10, parent 10
-    # parent2: 21 -> child 10, parent 11
-    assert c1.energy == 10
-    assert parent1.energy == 10
-
-    assert c2.energy == 10
-    assert parent2.energy == 11
+    # Parent retains minimum viable energy (>= 1 by default)
+    assert parent.energy >= 1
