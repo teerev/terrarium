@@ -13,6 +13,7 @@ Notes
 """
 
 from terrarium.core.protocols import RandomSource
+from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.world.state import WorldState
 
 
@@ -26,11 +27,16 @@ class Simulation:
     rng:
         Random source used for any stochastic behavior. Must be provided by the
         caller to preserve determinism and testability.
+    spawner:
+        Optional resource spawning rule.
     """
 
-    def __init__(self, world: WorldState, rng: RandomSource) -> None:
+    def __init__(
+        self, world: WorldState, rng: RandomSource, spawner: ResourceSpawner | None = None
+    ) -> None:
         self.world = world
         self.rng = rng
+        self.spawner = spawner
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -40,6 +46,9 @@ class Simulation:
         self._phase_consume()
         self._phase_reproduce()
         self._phase_cleanup()
+
+        if self.spawner is not None:
+            self.spawner.spawn(self.world, self.rng)
 
         # Commit the timestep.
         self.world.step_tick()
