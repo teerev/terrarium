@@ -11,6 +11,7 @@ from .movement import MovementRule
 from .spawning import ResourceSpawner
 from .consumption import ConsumptionRule
 from .death import DeathRule
+from .reproduction import ReproductionRule
 
 __all__ = [
     "ResourceSpawner",
@@ -18,4 +19,5 @@ __all__ = [
     "EnergyRule",
     "ConsumptionRule",
     "DeathRule",
+    "ReproductionRule",
 ]
