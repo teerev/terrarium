@@ -45,6 +45,7 @@ class WorldState:
         object.__setattr__(self, "_tick", 0)
         object.__setattr__(self, "_entities", {})
         object.__setattr__(self, "_by_pos", {})
+        object.__setattr__(self, "_lineage", None)
 
     @property
     def tick(self) -> int:
@@ -64,6 +65,17 @@ class WorldState:
         object.__setattr__(self, "_tick", new_tick)
         return new_tick
 
+    def set_lineage_tree(self, lineage_tree: object | None) -> None:
+        """Attach a lineage tree to the world.
+
+        The world will auto-record organism births when entities are added.
+
+        This is intentionally typed as object to avoid importing the analysis
+        subpackage from world state.
+        """
+
+        object.__setattr__(self, "_lineage", lineage_tree)
+
     def add_entity(self, entity: EntityLike) -> None:
         """Register an entity in the world."""
 
@@ -75,6 +87,16 @@ class WorldState:
 
         self._entities[entity_id] = entity
         self._by_pos.setdefault(pos, set()).add(entity_id)
+
+        # Integrate with lineage tracking (auto-record births).
+        # Avoid hard dependency on analysis module: use duck-typing.
+        lt = getattr(self, "_lineage", None)
+        if lt is not None and hasattr(lt, "add_organism"):
+            try:
+                lt.add_organism(entity)  # type: ignore[attr-defined]
+            except Exception:
+                # World state must not fail to add entities due to optional analytics.
+                pass
 
     def remove_entity(self, entity_id: EntityId) -> None:
         """Remove an entity from the world by id."""
@@ -133,3 +155,4 @@ class WorldState:
 WorldState._tick: int
 WorldState._entities: Dict[EntityId, EntityLike]
 WorldState._by_pos: Dict[Position, Set[EntityId]]
+WorldState._lineage: object | None
