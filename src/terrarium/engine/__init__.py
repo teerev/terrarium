@@ -6,10 +6,11 @@ Implementations are placeholders only.
 
 from __future__ import annotations
 
-from .rng import DefaultRNG
+from .rng import DefaultRNG, SeededRNG
 from .simulation import Simulation
 
 __all__ = [
     "DefaultRNG",
+    "SeededRNG",
     "Simulation",
 ]
