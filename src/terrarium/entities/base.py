@@ -20,8 +20,9 @@ Public APIs:
 
 import uuid
 from enum import Enum
-from typing import Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable
 
+from terrarium.core.protocols import RandomSource
 from terrarium.world.grid import Position
 
 
@@ -39,10 +40,19 @@ class EntityType(str, Enum):
     RESOURCE = "RESOURCE"
 
 
-def generate_id() -> EntityId:
-    """Return a new unique entity ID."""
+def generate_id(rng: Optional[RandomSource] = None) -> EntityId:
+    """Return a new unique entity ID.
 
-    return uuid.uuid4()
+    Determinism
+    -----------
+    If an RNG is provided, the UUID is derived from it, ensuring stable IDs for a
+    given seed across process restarts.
+    """
+
+    if rng is None:
+        return uuid.uuid4()
+    # randint() is inclusive; generate a 128-bit integer.
+    return uuid.UUID(int=rng.randint(0, (1 << 128) - 1))
 
 
 @runtime_checkable

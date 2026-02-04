@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from terrarium.core.protocols import RandomSource
 from terrarium.entities.base import EntityId, EntityType, generate_id
 from terrarium.world.grid import Position
 
@@ -26,8 +27,16 @@ class Resource:
 
 
 def create_resource(
-    position: Position, energy_value: int, *, id: Optional[EntityId] = None
+    position: Position,
+    energy_value: int,
+    *,
+    id: Optional[EntityId] = None,
+    rng: Optional[RandomSource] = None,
 ) -> Resource:
-    """Factory for Resource with a valid ID."""
+    """Factory for Resource with a valid ID.
 
-    return Resource(position=position, energy_value=energy_value, id=id or generate_id())
+    If `rng` is provided and `id` is not, the id will be derived from the RNG for
+    deterministic replay.
+    """
+
+    return Resource(position=position, energy_value=energy_value, id=id or generate_id(rng))

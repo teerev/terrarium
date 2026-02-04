@@ -64,6 +64,7 @@ class ResourceSpawner:
         min_e, max_e = self.energy_range
         energy = rng.randint(min_e, max_e)
 
-        res = create_resource(position=pos, energy_value=energy)
+        # IMPORTANT: derive resource ID from the seeded RNG to preserve determinism.
+        res = create_resource(position=pos, energy_value=energy, rng=rng)
         world.add_entity(res)
         return [res]

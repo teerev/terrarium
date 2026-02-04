@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from terrarium.core.protocols import RandomSource
 from terrarium.entities.base import EntityId, EntityType, generate_id
 from terrarium.world.grid import Position
 
@@ -38,8 +39,16 @@ class Organism:
 
 
 def create_organism(
-    position: Position, energy: int, *, id: Optional[EntityId] = None
+    position: Position,
+    energy: int,
+    *,
+    id: Optional[EntityId] = None,
+    rng: Optional[RandomSource] = None,
 ) -> Organism:
-    """Factory for Organism with a valid ID."""
+    """Factory for Organism with a valid ID.
 
-    return Organism(position=position, energy=energy, id=id or generate_id())
+    If `rng` is provided and `id` is not, the id will be derived from the RNG for
+    deterministic replay.
+    """
+
+    return Organism(position=position, energy=energy, id=id or generate_id(rng))
