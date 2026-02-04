@@ -15,7 +15,10 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "License :: OSI Approved :: MIT License",
 ]
-dependencies = []
+dependencies = ["click>=8.1"]
+
+[project.scripts]
+terrarium = "terrarium.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/teerev/terrarium"
