@@ -17,6 +17,8 @@ from dataclasses import dataclass
 
 from terrarium.engine.rng import SeededRNG
 from terrarium.entities.base import EntityId, EntityType, generate_id, generate_id_from_rng
+from terrarium.entities.genome import DEFAULT_GENOME, Genome
+from terrarium.entities.phenotype import Phenotype
 from terrarium.world.grid import Position
 
 
@@ -33,6 +35,7 @@ class Organism:
 
     position: Position
     energy: int
+    genome: Genome = DEFAULT_GENOME
     age: int = 0
     id: EntityId | None = None
 
@@ -49,6 +52,12 @@ class Organism:
     @property
     def entity_type(self) -> EntityType:
         return EntityType.ORGANISM
+
+    @property
+    def phenotype(self) -> Phenotype:
+        """Computed phenotype derived from the organism's genome."""
+
+        return Phenotype.from_genome(self.genome)
 
     @property
     def is_alive(self) -> bool:
@@ -71,6 +80,7 @@ def create_organism(
     *,
     entity_id: EntityId | None = None,
     rng: SeededRNG | None = None,
+    genome: Genome | None = None,
 ) -> Organism:
     """Factory for creating Organism instances with a valid id.
 
@@ -83,4 +93,7 @@ def create_organism(
     if entity_id is None and rng is not None:
         entity_id = generate_id_from_rng(rng)
 
-    return Organism(position=position, energy=energy, id=entity_id)
+    if genome is None:
+        genome = DEFAULT_GENOME
+
+    return Organism(position=position, energy=energy, genome=genome, id=entity_id)
