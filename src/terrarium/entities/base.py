@@ -20,7 +20,7 @@ Public APIs:
 
 import uuid
 from enum import Enum
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from terrarium.world.grid import Position
 
@@ -45,6 +45,7 @@ def generate_id() -> EntityId:
     return uuid.uuid4()
 
 
+@runtime_checkable
 class Entity(Protocol):
     """Structural protocol that all entities must satisfy.
 
