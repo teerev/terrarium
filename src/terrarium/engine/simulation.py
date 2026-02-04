@@ -11,6 +11,7 @@ scope for this skeleton.
 from __future__ import annotations
 
 from terrarium.engine.rng import SeededRNG
+from terrarium.engine.rules.energy import EnergyRule
 from terrarium.engine.rules.movement import MovementRule
 from terrarium.engine.rules.spawning import ResourceSpawner
 from terrarium.entities.organism import Organism
@@ -34,6 +35,8 @@ class Simulation:
         Optional rule component that spawns new Resource entities.
     movement_rule:
         Optional rule component that moves Organism entities.
+    energy_rule:
+        Optional rule component that drains organism energy each tick.
     """
 
     def __init__(
@@ -42,11 +45,13 @@ class Simulation:
         rng: SeededRNG,
         resource_spawner: ResourceSpawner | None = None,
         movement_rule: MovementRule | None = None,
+        energy_rule: EnergyRule | None = None,
     ):
         self.world = world
         self.rng = rng
         self.resource_spawner = resource_spawner
         self.movement_rule = movement_rule
+        self.energy_rule = energy_rule
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
@@ -54,6 +59,7 @@ class Simulation:
         # Phase order is explicitly defined to keep future behavior stable.
         self._phase_spawn()
         self._phase_move()
+        self._phase_energy()
         self._phase_consume()
         self._phase_reproduce()
         self._phase_cleanup()
@@ -88,6 +94,16 @@ class Simulation:
         organisms.sort(key=lambda o: str(o.id))
 
         self.movement_rule.apply(organisms, self.world, self.rng)
+
+    def _phase_energy(self) -> None:
+        if self.energy_rule is None:
+            return
+
+        entities = getattr(self.world, "_entities", {})
+        organisms: list[Organism] = [e for e in entities.values() if isinstance(e, Organism)]
+        organisms.sort(key=lambda o: str(o.id))
+
+        self.energy_rule.apply(organisms, self.world)
 
     def _phase_consume(self) -> None:
         return
