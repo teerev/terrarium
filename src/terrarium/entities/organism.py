@@ -5,6 +5,8 @@ from typing import Optional
 
 from terrarium.core.protocols import RandomSource
 from terrarium.entities.base import EntityId, EntityType, generate_id
+from terrarium.entities.genome import DEFAULT_GENOME, Genome
+from terrarium.entities.phenotype import Phenotype
 from terrarium.world.grid import Position
 
 
@@ -22,6 +24,7 @@ class Organism:
     energy: int
     id: EntityId
     age: int = 0
+    genome: Genome = DEFAULT_GENOME
 
     def __post_init__(self) -> None:
         if self.energy < 0:
@@ -37,6 +40,12 @@ class Organism:
     def is_alive(self) -> bool:
         return self.energy > 0
 
+    @property
+    def phenotype(self) -> Phenotype:
+        """Computed phenotype derived from the current genome."""
+
+        return Phenotype.from_genome(self.genome)
+
 
 def create_organism(
     position: Position,
@@ -44,6 +53,7 @@ def create_organism(
     *,
     id: Optional[EntityId] = None,
     rng: Optional[RandomSource] = None,
+    genome: Genome = DEFAULT_GENOME,
 ) -> Organism:
     """Factory for Organism with a valid ID.
 
@@ -51,4 +61,4 @@ def create_organism(
     deterministic replay.
     """
 
-    return Organism(position=position, energy=energy, id=id or generate_id(rng))
+    return Organism(position=position, energy=energy, id=id or generate_id(rng), genome=genome)
