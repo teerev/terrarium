@@ -7,6 +7,7 @@ from .schema import (
     ConsumptionEvent,
     MovementEvent,
 )
+from .emitter import EventEmitter, EventLog
 
 __all__ = [
     "Event",
@@ -14,4 +15,6 @@ __all__ = [
     "DeathEvent",
     "ConsumptionEvent",
     "MovementEvent",
+    "EventEmitter",
+    "EventLog",
 ]

@@ -40,6 +40,8 @@ class Simulation:
         Optional rule component that drains organism energy each tick.
     death_rule:
         Optional rule component that removes dead Organism entities each tick.
+    event_emitter:
+        Optional event emitter injected by the caller.
     """
 
     def __init__(
@@ -50,6 +52,7 @@ class Simulation:
         movement_rule: MovementRule | None = None,
         energy_rule: EnergyRule | None = None,
         death_rule: DeathRule | None = None,
+        event_emitter: object | None = None,
     ):
         self.world = world
         self.rng = rng
@@ -57,6 +60,8 @@ class Simulation:
         self.movement_rule = movement_rule
         self.energy_rule = energy_rule
         self.death_rule = death_rule
+        # Keep typed as object to avoid introducing hard coupling from engine -> events.
+        self.event_emitter = event_emitter
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
