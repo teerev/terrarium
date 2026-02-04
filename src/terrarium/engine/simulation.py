@@ -33,6 +33,7 @@ class Simulation:
         energy_rule: EnergyRule | None = None,
         death_rule: DeathRule | None = None,
         event_emitter: EventEmitter | None = None,
+        profiler: object | None = None,
     ) -> None:
         self.world = world
         self.rng = rng
@@ -41,24 +42,102 @@ class Simulation:
         self.energy_rule = energy_rule
         self.death_rule = death_rule
         self.event_emitter = event_emitter
+        self.profiler = profiler
+
+    def _tp(self, name: str):
+        """Return a timing context manager for *name*.
+
+        Uses duck-typing to avoid a hard dependency on terrarium.profiling.
+        """
+
+        p = self.profiler
+        if p is None:
+            return None
+        cm = getattr(p, "time_phase", None)
+        if cm is None:
+            return None
+        try:
+            return cm(name)
+        except Exception:
+            return None
 
     def step(self) -> None:
         """Advance the simulation by exactly one tick."""
 
+        p = self.profiler
+        step_cm = getattr(p, "time_step", None) if p is not None else None
+
+        if step_cm is None:
+            self._step_inner()
+            return
+
+        try:
+            with step_cm():
+                self._step_inner()
+        except TypeError:
+            # If profiler.time_step isn't a CM for some reason.
+            self._step_inner()
+
+    def _step_inner(self) -> None:
         # Phase order is intentionally explicit and stable.
-        self._phase_move()
-        self._phase_energy()
-        self._phase_death()
-        self._phase_consume()
-        self._phase_reproduce()
-        self._phase_cleanup()
+        cm = self._tp("movement")
+        if cm is None:
+            self._phase_move()
+        else:
+            with cm:
+                self._phase_move()
+
+        cm = self._tp("energy")
+        if cm is None:
+            self._phase_energy()
+        else:
+            with cm:
+                self._phase_energy()
+
+        cm = self._tp("death")
+        if cm is None:
+            self._phase_death()
+        else:
+            with cm:
+                self._phase_death()
+
+        cm = self._tp("consumption")
+        if cm is None:
+            self._phase_consume()
+        else:
+            with cm:
+                self._phase_consume()
+
+        cm = self._tp("reproduction")
+        if cm is None:
+            self._phase_reproduce()
+        else:
+            with cm:
+                self._phase_reproduce()
+
+        cm = self._tp("cleanup")
+        if cm is None:
+            self._phase_cleanup()
+        else:
+            with cm:
+                self._phase_cleanup()
 
         # Spawning rules (post-cleanup, pre-tick-commit).
+        cm = self._tp("spawning")
         if self.resource_spawner is not None:
-            self.resource_spawner.spawn(self.world, self.rng)
+            if cm is None:
+                self.resource_spawner.spawn(self.world, self.rng)
+            else:
+                with cm:
+                    self.resource_spawner.spawn(self.world, self.rng)
 
         # Commit timestep.
-        self.world.step()
+        cm = self._tp("tick_commit")
+        if cm is None:
+            self.world.step()
+        else:
+            with cm:
+                self.world.step()
 
     def run(self, n_steps: int) -> None:
         """Run the simulation for *n_steps* discrete timesteps."""
